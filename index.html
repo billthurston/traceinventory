@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trace Inventory — Multi-Channel Inventory for Industrial Sellers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0d0f;
+      --surface:   #111518;
+      --surface2:  #181d21;
+      --border:    rgba(255,255,255,0.07);
+      --border2:   rgba(255,255,255,0.12);
+      --text:      #e8eaeb;
+      --muted:     #7a8690;
+      --accent:    #00c896;
+      --accent2:   #00a87e;
+      --amber:     #f5a623;
+      --red:       #e8433a;
+      --font-disp: 'Bebas Neue', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── GRID TEXTURE ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5%;
+      height: 64px;
+      background: rgba(10,13,15,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: var(--font-disp);
+      font-size: 22px;
+      letter-spacing: 0.06em;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-logo-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 400;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      background: var(--accent) !important;
+      color: #000 !important;
+      padding: 8px 20px;
+      border-radius: 6px;
+      font-weight: 500 !important;
+      font-size: 14px !important;
+      transition: background 0.2s !important;
+    }
+
+    .nav-cta:hover { background: var(--accent2) !important; }
+
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+    }
+
+    /* ── SECTIONS ── */
+    section { position: relative; z-index: 1; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 5% 80px;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,200,150,0.08);
+      border: 1px solid rgba(0,200,150,0.2);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      margin-bottom: 32px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .hero-eyebrow-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .hero-title {
+      font-family: var(--font-disp);
+      font-size: clamp(56px, 10vw, 120px);
+      line-height: 0.92;
+      letter-spacing: 0.02em;
+      color: var(--text);
+      margin-bottom: 12px;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+
+    .hero-title-accent {
+      color: var(--accent);
+      display: block;
+    }
+
+    .hero-sub {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--muted);
+      max-width: 540px;
+      margin: 24px auto 48px;
+      font-weight: 300;
+      line-height: 1.7;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border2);
+      padding: 14px 32px;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-secondary:hover { border-color: rgba(255,255,255,0.3); transform: translateY(-1px); }
+
+    .hero-stats {
+      display: flex;
+      gap: 48px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 72px;
+      padding-top: 48px;
+      border-top: 1px solid var(--border);
+      animation: fadeUp 0.6s 0.4s ease both;
+    }
+
+    .hero-stat-num {
+      font-family: var(--font-disp);
+      font-size: 36px;
+      color: var(--text);
+      letter-spacing: 0.04em;
+    }
+
+    .hero-stat-label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ── PLATFORM STRIP ── */
+    .platforms {
+      padding: 40px 5%;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .platforms-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .platforms-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      letter-spacing: 0.06em;
+      margin-right: 8px;
+    }
+
+    .platform-pill {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 100px;
+      padding: 8px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+
+    .platform-pill.primary {
+      border-color: rgba(0,200,150,0.3);
+      color: var(--accent);
+    }
+
+    /* ── FEATURES ── */
+    .features {
+      padding: 120px 5%;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: var(--font-disp);
+      font-size: clamp(36px, 5vw, 64px);
+      line-height: 1;
+      letter-spacing: 0.02em;
+      color: var(--text);
+      margin-bottom: 64px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      padding: 36px 32px;
+      transition: background 0.2s;
+    }
+
+    .feature-card:hover { background: var(--surface2); }
+
+    .feature-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: rgba(0,200,150,0.1);
+      border: 1px solid rgba(0,200,150,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+
+    .feature-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.65;
+      font-weight: 300;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how {
+      padding: 120px 5%;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .how-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 32px;
+      margin-top: 64px;
+      position: relative;
+    }
+
+    .how-step {
+      position: relative;
+    }
+
+    .how-step-num {
+      font-family: var(--font-disp);
+      font-size: 64px;
+      line-height: 1;
+      color: rgba(255,255,255,0.04);
+      margin-bottom: -16px;
+    }
+
+    .how-step-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .how-step-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.65;
+      font-weight: 300;
+    }
+
+    .how-step-bar {
+      width: 32px;
+      height: 2px;
+      background: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    /* ── FOR WHO ── */
+    .forwho {
+      padding: 80px 5%;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .forwho-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .forwho-inner { grid-template-columns: 1fr; gap: 40px; }
+    }
+
+    .forwho-list {
+      list-style: none;
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .forwho-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 15px;
+      color: var(--muted);
+      font-weight: 300;
+    }
+
+    .forwho-check {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: rgba(0,200,150,0.1);
+      border: 1px solid rgba(0,200,150,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+      color: var(--accent);
+      font-size: 10px;
+    }
+
+    .pain-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pain-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .pain-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+    .pain-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+
+    .pain-desc { font-size: 13px; color: var(--muted); font-weight: 300; }
+
+    /* ── WAITLIST ── */
+    .waitlist {
+      padding: 120px 5%;
+      text-align: center;
+    }
+
+    .waitlist-inner {
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .waitlist-title {
+      font-family: var(--font-disp);
+      font-size: clamp(40px, 6vw, 72px);
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    .waitlist-sub {
+      font-size: 16px;
+      color: var(--muted);
+      font-weight: 300;
+      margin-bottom: 40px;
+    }
+
+    .waitlist-form {
+      display: flex;
+      gap: 8px;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 480px) {
+      .waitlist-form { flex-direction: column; }
+    }
+
+    .waitlist-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 13px 16px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .waitlist-input::placeholder { color: var(--muted); }
+    .waitlist-input:focus { border-color: rgba(0,200,150,0.4); }
+
+    .waitlist-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 13px 24px;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+
+    .waitlist-btn:hover { background: var(--accent2); }
+
+    .waitlist-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 14px;
+      font-family: var(--font-mono);
+    }
+
+    #success-msg {
+      display: none;
+      color: var(--accent);
+      font-size: 15px;
+      margin-top: 16px;
+      font-family: var(--font-mono);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 40px 5%;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-logo {
+      font-family: var(--font-disp);
+      font-size: 18px;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .footer-copy {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="nav-logo">
+      <span class="nav-logo-dot"></span>
+      TRACE
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#waitlist">Pricing</a></li>
+      <li><a href="#waitlist" class="nav-cta">Get early access</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="hero-logo-dot" style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;"></span>
+      Built for industrial sellers
+    </div>
+    <h1 class="hero-title">
+      INVENTORY<br>
+      <span class="hero-title-accent">THAT SELLS.</span>
+    </h1>
+    <p class="hero-sub">
+      One platform to manage your stock, sync across eBay, Amazon and more — and never oversell again.
+    </p>
+    <div class="hero-actions">
+      <a href="#waitlist" class="btn-primary">Get early access</a>
+      <a href="#features" class="btn-secondary">See features</a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-num">1</div>
+        <div class="hero-stat-label">Source of truth</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">∞</div>
+        <div class="hero-stat-label">Sales channels</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">0</div>
+        <div class="hero-stat-label">Oversells</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">24/7</div>
+        <div class="hero-stat-label">Stock alerts</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLATFORMS -->
+  <div class="platforms">
+    <div class="platforms-inner">
+      <span class="platforms-label">SELLS ON</span>
+      <span class="platform-pill primary">eBay</span>
+      <span class="platform-pill">Amazon</span>
+      <span class="platform-pill">Your own store</span>
+      <span class="platform-pill">More coming</span>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="reveal visible">
+      <div class="section-label">// features</div>
+      <div class="section-title">EVERYTHING<br>YOU NEED</div>
+    </div>
+    <div class="features-grid reveal visible">
+      <div class="feature-card">
+        <div class="feature-icon">▦</div>
+        <div class="feature-title">Barcode &amp; QR scanning</div>
+        <div class="feature-desc">Scan items with your phone camera — no dedicated hardware needed. Works on iPhone, Android, and tablets straight from the browser.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">■</div>
+        <div class="feature-title">Multi-channel sync</div>
+        <div class="feature-desc">List once, sell everywhere. Stock levels update across all platforms the moment a sale comes in — eBay, Amazon, your own store.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">▲</div>
+        <div class="feature-title">Low-stock alerts</div>
+        <div class="feature-desc">Set custom reorder thresholds per item. Get email alerts before you run out — not after you've already oversold.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">◆</div>
+        <div class="feature-title">Platform-specific listings</div>
+        <div class="feature-desc">eBay and Amazon speak different languages. Write optimized titles, descriptions, and item specifics for each platform from one place.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">△</div>
+        <div class="feature-title">Team access &amp; roles</div>
+        <div class="feature-desc">Invite your warehouse staff and set role-based permissions. Admins manage everything, staff handle stock movements and scanning.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">□</div>
+        <div class="feature-title">Mobile-first design</div>
+        <div class="feature-desc">Built for phones and tablets first. Full functionality from the warehouse floor — no app download, no app store, just your browser.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how" id="how">
+    <div class="reveal visible">
+      <div class="section-label">// how it works</div>
+      <div class="section-title">SIMPLE<br>BY DESIGN</div>
+    </div>
+    <div class="how-steps">
+      <div class="how-step reveal visible">
+        <div class="how-step-num">01</div>
+        <div class="how-step-bar"></div>
+        <div class="how-step-title">Add your inventory</div>
+        <div class="how-step-desc">Scan barcodes or enter items manually. Upload photos, set quantities, costs, and locations. Your master record is created once.</div>
+      </div>
+      <div class="how-step reveal visible">
+        <div class="how-step-num">02</div>
+        <div class="how-step-bar"></div>
+        <div class="how-step-title">Write platform listings</div>
+        <div class="how-step-desc">Add eBay-optimized titles and item specifics. Add Amazon bullet points and category fields. One item, tailored for each platform.</div>
+      </div>
+      <div class="how-step reveal visible">
+        <div class="how-step-num">03</div>
+        <div class="how-step-bar"></div>
+        <div class="how-step-title">Sell and stay synced</div>
+        <div class="how-step-desc">When a sale comes in anywhere, stock updates everywhere in real time. No manual adjustments, no overselling, no missed sales.</div>
+      </div>
+      <div class="how-step reveal visible">
+        <div class="how-step-num">04</div>
+        <div class="how-step-bar"></div>
+        <div class="how-step-title">Get alerted, reorder fast</div>
+        <div class="how-step-desc">Low-stock alerts hit your inbox before items run out. Full stock movement history gives you an audit trail for every change.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOR WHO -->
+  <section class="forwho">
+    <div class="forwho-inner">
+      <div class="reveal visible">
+        <div class="section-label">// built for</div>
+        <div class="section-title" style="font-size: clamp(32px,4vw,52px);">INDUSTRIAL<br>SELLERS WHO<br>MEAN BUSINESS</div>
+        <ul class="forwho-list">
+          <li><span class="forwho-check">✓</span> eBay industrial &amp; parts sellers</li>
+          <li><span class="forwho-check">✓</span> Amazon third-party sellers</li>
+          <li><span class="forwho-check">✓</span> Multi-location warehouses</li>
+          <li><span class="forwho-check">✓</span> Small teams managing large SKU counts</li>
+          <li><span class="forwho-check">✓</span> Businesses tired of spreadsheets</li>
+        </ul>
+      </div>
+      <div class="pain-cards reveal visible">
+        <div class="pain-card">
+          <div class="pain-icon">⚠</div>
+          <div>
+            <div class="pain-title">Sold the same item twice?</div>
+            <div class="pain-desc">Real-time stock sync across every channel eliminates overselling permanently.</div>
+          </div>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon">✎</div>
+          <div>
+            <div class="pain-title">Writing listings from scratch each time?</div>
+            <div class="pain-desc">Write once, push to eBay and Amazon with platform-specific formatting built in.</div>
+          </div>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon">☍</div>
+          <div>
+            <div class="pain-title">Managing stock on spreadsheets?</div>
+            <div class="pain-desc">Scan, track, and audit every stock movement from your phone. No more manual counts.</div>
+          </div>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon">✉</div>
+          <div>
+            <div class="pain-title">Finding out you're out of stock too late?</div>
+            <div class="pain-desc">Custom reorder thresholds and email alerts keep you ahead of demand.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WAITLIST -->
+  <section class="waitlist" id="waitlist">
+    <div class="waitlist-inner">
+      <div class="reveal visible">
+        <div class="waitlist-title">GET EARLY<br>ACCESS</div>
+        <div class="waitlist-sub">Be first in line when Trace Inventory launches. No credit card required.</div>
+        <div class="waitlist-form">
+          <input type="email" class="waitlist-input" id="email-input" placeholder="your@email.com">
+          <button class="waitlist-btn" onclick="handleSignup()">Notify me</button>
+        </div>
+        <div id="success-msg">✓ &nbsp;You're on the list — we'll be in touch.</div>
+        <div class="waitlist-note">No spam. Unsubscribe anytime.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">TRACE</div>
+    <div class="footer-copy">© 2026 Trace Inventory. All rights reserved.</div>
+  </footer>
+
+  <script>
+    function handleSignup() {
+      const input = document.getElementById('email-input');
+      const msg = document.getElementById('success-msg');
+      if (input.value && input.value.includes('@')) {
+        input.style.display = 'none';
+        document.querySelector('.waitlist-btn').style.display = 'none';
+        msg.style.display = 'block';
+      } else {
+        input.style.borderColor = '#e8433a';
+        input.focus();
+      }
+    }
+
+    document.getElementById('email-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') handleSignup();
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+
+
+</body>
+</html>
