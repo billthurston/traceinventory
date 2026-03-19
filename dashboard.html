@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trace Inventory — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* REF: DASH.MAIN.LAYOUT */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0d0f;
+      --surface:   #111518;
+      --surface2:  #181d21;
+      --surface3:  #1e2428;
+      --border:    rgba(255,255,255,0.07);
+      --border2:   rgba(255,255,255,0.12);
+      --text:      #e8eaeb;
+      --muted:     #7a8690;
+      --muted2:    #4a5560;
+      --accent:    #00c896;
+      --accent2:   #00a87e;
+      --amber:     #f5a623;
+      --red:       #e8433a;
+      --font-disp: 'Bebas Neue', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+      --nav-w:     240px;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      display: flex;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.014) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--nav-w);
+      height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 24px 20px;
+      border-bottom: 1px solid var(--border);
+      text-decoration: none;
+    }
+
+    .logo-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2.5s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:.5; transform:scale(.8); }
+    }
+
+    .logo-text {
+      font-family: var(--font-disp);
+      font-size: 20px;
+      letter-spacing: .06em;
+      color: var(--text);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px 12px;
+      overflow-y: auto;
+    }
+
+    .nav-section-label {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      letter-spacing: .1em;
+      color: var(--muted2);
+      padding: 0 8px;
+      margin: 16px 0 6px;
+      text-transform: uppercase;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 7px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      margin-bottom: 2px;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+
+    .nav-icon {
+      width: 16px; height: 16px;
+      opacity: .7;
+      flex-shrink: 0;
+      font-style: normal;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      background: rgba(232,67,58,.15);
+      color: #f08080;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      padding: 2px 6px;
+      border-radius: 10px;
+      border: 1px solid rgba(232,67,58,.2);
+    }
+
+    .nav-badge.green {
+      background: rgba(0,200,150,.1);
+      color: var(--accent);
+      border-color: rgba(0,200,150,.2);
+    }
+
+    .sidebar-footer {
+      padding: 16px 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .user-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .user-row:hover { background: var(--surface2); }
+
+    .user-avatar {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: rgba(0,200,150,.15);
+      border: 1px solid rgba(0,200,150,.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      flex-shrink: 0;
+      font-family: var(--font-mono);
+    }
+
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: 10px; color: var(--muted); font-family: var(--font-mono); }
+
+    .sign-out-btn {
+      width: 100%;
+      margin-top: 8px;
+      padding: 7px;
+      background: transparent;
+      border: 1px solid var(--border2);
+      border-radius: 7px;
+      color: var(--muted);
+      font-family: var(--font-body);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .sign-out-btn:hover { color: var(--red); border-color: rgba(232,67,58,.3); }
+
+    /* ── MAIN CONTENT ── */
+    .main {
+      flex: 1;
+      height: 100vh;
+      overflow-y: auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,13,15,.8);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .topbar-title {
+      font-family: var(--font-disp);
+      font-size: 24px;
+      letter-spacing: .04em;
+      color: var(--text);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 7px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border2); }
+    .btn-outline:hover { border-color: rgba(255,255,255,.25); }
+
+    .content { padding: 32px; }
+
+    /* ── STAT CARDS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      animation: fadeUp .4s ease both;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: .05s; }
+    .stat-card:nth-child(2) { animation-delay: .1s; }
+    .stat-card:nth-child(3) { animation-delay: .15s; }
+    .stat-card:nth-child(4) { animation-delay: .2s; }
+
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(12px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-family: var(--font-disp);
+      font-size: 40px;
+      line-height: 1;
+      letter-spacing: .02em;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.red    { color: var(--red); }
+    .stat-value.amber  { color: var(--amber); }
+
+    .stat-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ── GRID LAYOUT ── */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 1100px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      animation: fadeUp .5s .2s ease both;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }
+
+    .dot-red   { background: var(--red); }
+    .dot-amber { background: var(--amber); }
+    .dot-green { background: var(--accent); }
+    .dot-blue  { background: #378add; }
+
+    .panel-action {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      background: none;
+      border: none;
+      transition: opacity .15s;
+    }
+
+    .panel-action:hover { opacity: .7; }
+
+    /* ── LOW STOCK LIST ── */
+    .stock-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+      cursor: pointer;
+    }
+
+    .stock-item:last-child { border-bottom: none; }
+    .stock-item:hover { background: var(--surface2); }
+
+    .stock-item-left { display: flex; flex-direction: column; gap: 2px; }
+    .stock-item-name { font-size: 13px; font-weight: 500; color: var(--text); }
+    .stock-item-sku  { font-size: 11px; font-family: var(--font-mono); color: var(--muted); }
+
+    .stock-qty {
+      font-family: var(--font-disp);
+      font-size: 22px;
+      letter-spacing: .02em;
+    }
+
+    .qty-critical { color: var(--red); }
+    .qty-low      { color: var(--amber); }
+
+    /* ── MOVEMENTS LIST ── */
+    .movement-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 20px;
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+    }
+
+    .movement-item:last-child { border-bottom: none; }
+    .movement-item:hover { background: var(--surface2); }
+
+    .movement-badge {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      flex-shrink: 0;
+      width: 70px;
+      text-align: center;
+    }
+
+    .badge-receive    { background: rgba(0,200,150,.1);  color: var(--accent); border: 1px solid rgba(0,200,150,.2); }
+    .badge-sale       { background: rgba(55,138,221,.1); color: #85b7eb;       border: 1px solid rgba(55,138,221,.2); }
+    .badge-adjustment { background: rgba(245,166,35,.1); color: var(--amber);  border: 1px solid rgba(245,166,35,.2); }
+    .badge-write_off  { background: rgba(232,67,58,.1);  color: #f08080;       border: 1px solid rgba(232,67,58,.2); }
+    .badge-transfer   { background: rgba(127,119,221,.1);color: #afa9ec;       border: 1px solid rgba(127,119,221,.2); }
+
+    .movement-info { flex: 1; min-width: 0; }
+    .movement-name { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .movement-meta { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+
+    .movement-qty {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    .qty-pos { color: var(--accent); }
+    .qty-neg { color: var(--red); }
+
+    /* ── QUICK ACTIONS ── */
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+    }
+
+    .action-btn {
+      background: var(--surface);
+      padding: 20px;
+      cursor: pointer;
+      transition: background .15s;
+      border: none;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .action-btn:hover { background: var(--surface2); }
+
+    .action-icon {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .action-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .action-desc {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* ── PLATFORM STATUS ── */
+    .platform-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .platform-item:last-child { border-bottom: none; }
+
+    .platform-left { display: flex; align-items: center; gap: 10px; }
+
+    .platform-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .platform-name { font-size: 13px; font-weight: 500; color: var(--text); }
+    .platform-sub  { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+
+    .platform-count {
+      font-family: var(--font-disp);
+      font-size: 22px;
+      letter-spacing: .02em;
+      color: var(--text);
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      padding: 32px 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      font-family: var(--font-mono);
+    }
+
+    /* ── LOADING ── */
+    .loading {
+      padding: 24px 20px;
+      text-align: center;
+      color: var(--muted2);
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── MOBILE ── */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .content { padding: 20px 16px; }
+      .topbar  { padding: 16px 20px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a href="dashboard.html" class="sidebar-logo">
+      <span class="logo-dot"></span>
+      <span class="logo-text">TRACE</span>
+    </a>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a class="nav-item active" href="dashboard.html">
+        <i class="nav-icon">&#9632;</i> Dashboard
+      </a>
+      <a class="nav-item" href="items.html">
+        <i class="nav-icon">&#9670;</i> Inventory
+        <span class="nav-badge green" id="nav-items-count">—</span>
+      </a>
+      <a class="nav-item" href="scan.html">
+        <i class="nav-icon">&#9638;</i> Scan
+      </a>
+      <a class="nav-item" href="movements.html">
+        <i class="nav-icon">&#9650;</i> Stock movements
+      </a>
+
+      <div class="nav-section-label">Platforms</div>
+      <a class="nav-item" href="ebay.html">
+        <i class="nav-icon">&#9679;</i> eBay listings
+      </a>
+      <a class="nav-item" href="amazon.html">
+        <i class="nav-icon">&#9679;</i> Amazon listings
+      </a>
+
+      <div class="nav-section-label">Settings</div>
+      <a class="nav-item" href="locations.html">
+        <i class="nav-icon">&#9671;</i> Locations
+      </a>
+      <a class="nav-item" href="team.html">
+        <i class="nav-icon">&#9651;</i> Team
+      </a>
+      <a class="nav-item" href="settings.html">
+        <i class="nav-icon">&#9633;</i> Settings
+      </a>
+      <a class="nav-item" href="help.html">
+        <i class="nav-icon">&#9632;</i> Help / Tracie
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-row">
+        <div class="user-avatar" id="user-initials">—</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">Loading...</div>
+          <div class="user-role" id="user-role">—</div>
+        </div>
+      </div>
+      <button class="sign-out-btn" onclick="handleSignOut()">Sign out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title">DASHBOARD</div>
+      <div class="topbar-right">
+        <button class="btn btn-outline" onclick="window.location.href='scan.html'">&#9638; Scan item</button>
+        <button class="btn btn-primary" onclick="window.location.href='items.html?new=1'">+ Add item</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- STAT CARDS -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total items</div>
+          <div class="stat-value accent" id="stat-total">—</div>
+          <div class="stat-sub">unique SKUs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Low stock</div>
+          <div class="stat-value red" id="stat-low">—</div>
+          <div class="stat-sub">below threshold</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total units</div>
+          <div class="stat-value" id="stat-units">—</div>
+          <div class="stat-sub">on hand</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Inventory value</div>
+          <div class="stat-value amber" id="stat-value">—</div>
+          <div class="stat-sub">at cost price</div>
+        </div>
+      </div>
+
+      <!-- MAIN GRID -->
+      <div class="dash-grid">
+
+        <!-- LOW STOCK ALERTS -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="panel-title-dot dot-red"></span>
+              Low stock alerts
+            </div>
+            <a class="panel-action" href="items.html?filter=low">View all</a>
+          </div>
+          <div id="low-stock-list">
+            <div class="loading"><span class="spinner"></span>loading...</div>
+          </div>
+        </div>
+
+        <!-- RECENT MOVEMENTS -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="panel-title-dot dot-green"></span>
+              Recent stock movements
+            </div>
+            <a class="panel-action" href="movements.html">View all</a>
+          </div>
+          <div id="movements-list">
+            <div class="loading"><span class="spinner"></span>loading...</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="dash-grid">
+
+        <!-- QUICK ACTIONS -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="panel-title-dot dot-blue"></span>
+              Quick actions
+            </div>
+          </div>
+          <div class="actions-grid">
+            <button class="action-btn" onclick="window.location.href='items.html?new=1'">
+              <div class="action-icon">&#9670;</div>
+              <div class="action-title">Add item</div>
+              <div class="action-desc">Add a new SKU to inventory</div>
+            </button>
+            <button class="action-btn" onclick="window.location.href='scan.html'">
+              <div class="action-icon">&#9638;</div>
+              <div class="action-title">Scan barcode</div>
+              <div class="action-desc">Scan to look up or receive stock</div>
+            </button>
+            <button class="action-btn" onclick="window.location.href='movements.html?type=receive'">
+              <div class="action-icon">&#9650;</div>
+              <div class="action-title">Receive stock</div>
+              <div class="action-desc">Log incoming inventory</div>
+            </button>
+            <button class="action-btn" onclick="window.location.href='movements.html?type=adjustment'">
+              <div class="action-icon">&#9633;</div>
+              <div class="action-title">Adjust stock</div>
+              <div class="action-desc">Correct a quantity count</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- PLATFORM STATUS -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="panel-title-dot dot-amber"></span>
+              Platform listings
+            </div>
+            <a class="panel-action" href="ebay.html">Manage</a>
+          </div>
+          <div id="platform-list">
+            <div class="loading"><span class="spinner"></span>loading...</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // REF: DASH.MAIN.DATA
+    // Replace with your actual Supabase keys
+    const SUPABASE_URL = 'https://jwwesefbgpvbabsybzcv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3d2VzZWZiZ3B2YmFic3liemN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4ODI1NDAsImV4cCI6MjA4OTQ1ODU0MH0.rKBkAyrh2z3nYg5I-zq_xhOumOmMnlLOFhsT-ShG17s';
+
+
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = null;
+    let currentOrg  = null;
+
+    // ── INIT ──
+    async function init() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { window.location.href = 'login.html'; return; }
+      currentUser = session.user;
+      await loadUser();
+      await Promise.all([
+        loadStats(),
+        loadLowStock(),
+        loadMovements(),
+        loadPlatforms()
+      ]);
+    }
+
+    // ── LOAD USER ──
+    async function loadUser() {
+      const { data: membership } = await sb
+        .from('memberships')
+        .select('role, org_id, organizations(name)')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (membership) {
+        currentOrg = membership.org_id;
+        const name = currentUser.user_metadata?.full_name || currentUser.email;
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+        document.getElementById('user-initials').textContent = initials;
+        document.getElementById('user-name').textContent = name;
+        document.getElementById('user-role').textContent = membership.role;
+      }
+    }
+
+    // ── LOAD STATS ──
+    async function loadStats() {
+      if (!currentOrg) return;
+
+      const { data: items } = await sb
+        .from('items')
+        .select('qty_on_hand, reorder_threshold, cost_price')
+        .eq('org_id', currentOrg);
+
+      if (!items) return;
+
+      const total     = items.length;
+      const lowStock  = items.filter(i => i.qty_on_hand <= i.reorder_threshold).length;
+      const totalUnits = items.reduce((sum, i) => sum + (i.qty_on_hand || 0), 0);
+      const totalValue = items.reduce((sum, i) => sum + ((i.qty_on_hand || 0) * (i.cost_price || 0)), 0);
+
+      document.getElementById('stat-total').textContent  = total.toLocaleString();
+      document.getElementById('stat-low').textContent    = lowStock.toLocaleString();
+      document.getElementById('stat-units').textContent  = totalUnits.toLocaleString();
+      document.getElementById('stat-value').textContent  = '$' + totalValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      document.getElementById('nav-items-count').textContent = total;
+    }
+
+    // ── LOW STOCK ──
+    async function loadLowStock() {
+      if (!currentOrg) return;
+
+      const { data: items } = await sb
+        .from('items')
+        .select('id, name, sku, qty_on_hand, reorder_threshold')
+        .eq('org_id', currentOrg)
+        .order('qty_on_hand', { ascending: true })
+        .limit(8);
+
+      const low = (items || []).filter(i => i.qty_on_hand <= i.reorder_threshold);
+      const el = document.getElementById('low-stock-list');
+
+      if (low.length === 0) {
+        el.innerHTML = '<div class="empty">&#10003; &nbsp;All items above threshold</div>';
+        return;
+      }
+
+      el.innerHTML = low.map(item => {
+        const critical = item.qty_on_hand === 0;
+        return `
+          <div class="stock-item" onclick="window.location.href='items.html?id=${item.id}'">
+            <div class="stock-item-left">
+              <div class="stock-item-name">${item.name}</div>
+              <div class="stock-item-sku">${item.sku}</div>
+            </div>
+            <div class="stock-qty ${critical ? 'qty-critical' : 'qty-low'}">${item.qty_on_hand}</div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── RECENT MOVEMENTS ──
+    async function loadMovements() {
+      if (!currentOrg) return;
+
+      const { data: movements } = await sb
+        .from('stock_movements')
+        .select('id, type, qty_change, qty_after, created_at, note, items(name, sku)')
+        .eq('items.org_id', currentOrg)
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+      const el = document.getElementById('movements-list');
+
+      if (!movements || movements.length === 0) {
+        el.innerHTML = '<div class="empty">No stock movements yet</div>';
+        return;
+      }
+
+      el.innerHTML = movements.map(m => {
+        const isPos = m.qty_change > 0;
+        const time  = new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return `
+          <div class="movement-item">
+            <span class="movement-badge badge-${m.type}">${m.type.replace('_',' ')}</span>
+            <div class="movement-info">
+              <div class="movement-name">${m.items?.name || '—'}</div>
+              <div class="movement-meta">${m.items?.sku || ''} &nbsp;·&nbsp; ${time}</div>
+            </div>
+            <div class="movement-qty ${isPos ? 'qty-pos' : 'qty-neg'}">${isPos ? '+' : ''}${m.qty_change}</div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── PLATFORM STATUS ──
+    async function loadPlatforms() {
+      if (!currentOrg) return;
+
+      const [{ count: ebayCount }, { count: amznCount }] = await Promise.all([
+        sb.from('ebay_listings').select('*', { count: 'exact', head: true }).eq('org_id', currentOrg).eq('status', 'active'),
+        sb.from('amazon_listings').select('*', { count: 'exact', head: true }).eq('org_id', currentOrg).eq('status', 'active')
+      ]);
+
+      const el = document.getElementById('platform-list');
+      el.innerHTML = `
+        <div class="platform-item">
+          <div class="platform-left">
+            <span class="platform-dot" style="background:#e8a020"></span>
+            <div>
+              <div class="platform-name">eBay</div>
+              <div class="platform-sub">active listings</div>
+            </div>
+          </div>
+          <div class="platform-count">${ebayCount || 0}</div>
+        </div>
+        <div class="platform-item">
+          <div class="platform-left">
+            <span class="platform-dot" style="background:#378add"></span>
+            <div>
+              <div class="platform-name">Amazon</div>
+              <div class="platform-sub">active listings</div>
+            </div>
+          </div>
+          <div class="platform-count">${amznCount || 0}</div>
+        </div>
+        <div class="platform-item">
+          <div class="platform-left">
+            <span class="platform-dot" style="background:var(--accent)"></span>
+            <div>
+              <div class="platform-name">Your store</div>
+              <div class="platform-sub">coming soon</div>
+            </div>
+          </div>
+          <div class="platform-count" style="color:var(--muted)">—</div>
+        </div>`;
+    }
+
+    // ── SIGN OUT ──
+    async function handleSignOut() {
+      await sb.auth.signOut();
+      window.location.href = 'login.html';
+    }
+
+    init();
+  </script>
+
+</body>
+</html>
