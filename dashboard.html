@@ -551,19 +551,61 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── HAMBURGER ── */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 6px;
+      margin-right: 4px;
+      flex-shrink: 0;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: var(--text);
+      border-radius: 2px;
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 9;
+    }
+
+    .sidebar-overlay.open { display: block; }
+
     /* ── MOBILE ── */
     @media (max-width: 768px) {
-      .sidebar { display: none; }
+      .sidebar {
+        position: fixed;
+        left: calc(-1 * var(--nav-w));
+        top: 0;
+        bottom: 0;
+        z-index: 50;
+        transition: left .25s ease;
+      }
+      .sidebar.open { left: 0; }
       .content { padding: 20px 16px; }
       .topbar  { padding: 16px 20px; }
       .stats-grid { grid-template-columns: 1fr 1fr; }
+      .hamburger { display: flex; }
     }
   </style>
 </head>
 <body>
 
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleNav()"></div>
+
   <!-- SIDEBAR -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <a href="dashboard.html" class="sidebar-logo">
       <span class="logo-dot"></span>
       <span class="logo-text">TRACE</span>
@@ -623,7 +665,12 @@
   <!-- MAIN -->
   <main class="main">
     <div class="topbar">
-      <div class="topbar-title">DASHBOARD</div>
+      <div style="display:flex;align-items:center">
+        <button class="hamburger" onclick="toggleNav()" aria-label="Toggle menu">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="topbar-title">DASHBOARD</div>
+      </div>
       <div class="topbar-right">
         <button class="btn btn-outline" onclick="window.location.href='scan.html'">&#9638; Scan item</button>
         <button class="btn btn-primary" onclick="window.location.href='items.html?new=1'">+ Add item</button>
@@ -742,12 +789,10 @@
     </div>
   </main>
 
+  <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // REF: DASH.MAIN.DATA
-    // Replace with your actual Supabase keys
-    const SUPABASE_URL = 'https://jwwesefbgpvbabsybzcv.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3d2VzZWZiZ3B2YmFic3liemN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4ODI1NDAsImV4cCI6MjA4OTQ1ODU0MH0.rKBkAyrh2z3nYg5I-zq_xhOumOmMnlLOFhsT-ShG17s';
 
 
     const { createClient } = supabase;
@@ -820,9 +865,9 @@
         .select('id, name, sku, qty_on_hand, reorder_threshold')
         .eq('org_id', currentOrg)
         .order('qty_on_hand', { ascending: true })
-        .limit(8);
+        .limit(200);
 
-      const low = (items || []).filter(i => i.qty_on_hand <= i.reorder_threshold);
+      const low = (items || []).filter(i => i.qty_on_hand <= i.reorder_threshold).slice(0, 8);
       const el = document.getElementById('low-stock-list');
 
       if (low.length === 0) {
@@ -847,17 +892,30 @@
     async function loadMovements() {
       if (!currentOrg) return;
 
+      const { data: orgItems } = await sb
+        .from('items')
+        .select('id')
+        .eq('org_id', currentOrg);
+
+      const el = document.getElementById('movements-list');
+      if (!orgItems || orgItems.length === 0) {
+        el.textContent = 'No stock movements yet';
+        el.className = 'empty';
+        return;
+      }
+
+      const itemIds = orgItems.map(i => i.id);
+
       const { data: movements } = await sb
         .from('stock_movements')
         .select('id, type, qty_change, qty_after, created_at, note, items(name, sku)')
-        .eq('items.org_id', currentOrg)
+        .in('item_id', itemIds)
         .order('created_at', { ascending: false })
         .limit(8);
 
-      const el = document.getElementById('movements-list');
-
       if (!movements || movements.length === 0) {
-        el.innerHTML = '<div class="empty">No stock movements yet</div>';
+        el.textContent = 'No stock movements yet';
+        el.className = 'empty';
         return;
       }
 
@@ -917,6 +975,12 @@
           </div>
           <div class="platform-count" style="color:var(--muted)">—</div>
         </div>`;
+    }
+
+    // ── MOBILE NAV ──
+    function toggleNav() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('sidebar-overlay').classList.toggle('open');
     }
 
     // ── SIGN OUT ──
