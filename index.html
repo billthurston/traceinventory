@@ -134,7 +134,40 @@
       justify-content: center;
       text-align: center;
       padding: 120px 5% 80px;
+      overflow: hidden;
     }
+
+    /* Warehouse image — desaturated dark texture with grid baked in */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      background:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px),
+        url('image/inventory.jpeg') center / cover no-repeat;
+      background-size: 48px 48px, 48px 48px, cover;
+      filter: grayscale(1) brightness(0.30) contrast(1.3);
+      z-index: 0;
+    }
+
+    /* Duotone accent overlay — subtle green tint toward top, fades to dark */
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(0,200,150,0.07) 0%,
+        rgba(10,13,15,0.1)   50%,
+        rgba(10,13,15,0.55)  100%
+      );
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Keep all hero content above image layers */
+    .hero > * { position: relative; z-index: 1; }
 
     .hero-eyebrow {
       display: inline-flex;
