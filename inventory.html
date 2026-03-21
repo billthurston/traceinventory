@@ -174,6 +174,7 @@ textarea.form-input{resize:vertical;min-height:90px;line-height:1.5}
 .rec-micro:hover:not(:disabled){border-color:var(--border2);color:var(--text);background:rgba(255,255,255,.05);}
 .rec-micro:disabled{opacity:.2;cursor:not-allowed;}
 .rec-status-counter{flex:1;text-align:center;font-family:var(--font-mono);font-size:.82rem;font-weight:500;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 10px;user-select:none;}
+.rec-saved{font-family:var(--font-mono);font-size:.72rem;color:var(--accent);white-space:nowrap;margin-left:6px;opacity:0;transition:opacity .3s;}
 /* ── MOBILE ── */
 @media(max-width:900px){
   .main{margin-left:0;margin-right:0}
@@ -314,6 +315,7 @@ textarea.form-input{resize:vertical;min-height:90px;line-height:1.5}
             <div class="rec-status-counter" id="rec-counter">— of —</div>
             <button class="rec-micro" id="rec-m-next"  onclick="navNext()">&#9654;</button>
             <button class="rec-micro" id="rec-m-last"  onclick="navLast()">&#9654;|</button>
+            <span class="rec-saved" id="rec-saved">&#10003; Saved</span>
           </div>
         </div>
       </div>
@@ -604,7 +606,7 @@ async function init() {
     if (!selectedItemId || !isDirty) return;
     clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(function() {
-      if (selectedItemId && isDirty) saveItem();
+      if (selectedItemId && isDirty) saveItemSilent();
     }, 600);
   }, true);
 }
@@ -946,6 +948,58 @@ async function saveItem() {
     document.getElementById('btn-delete').disabled = false;
     var updated = allItems.find(function(i){ return i.id === selectedItemId; });
     if (updated) { populatePanels(updated); isDirty = false; }
+  }
+}
+
+async function saveItemSilent() {
+  if (!selectedItemId || !isDirty) return;
+  var name   = document.getElementById('f-name').value.trim();
+  var sku    = document.getElementById('f-sku').value.trim();
+  var qty    = parseInt(document.getElementById('f-qty').value);
+  if (!name || !sku || isNaN(qty) || qty < 0) return; // skip if required fields invalid
+  var payload = {
+    org_id:            currentOrg,
+    name:              name,
+    sku:               sku,
+    manufacturer:      document.getElementById('f-manufacturer').value.trim()    || null,
+    model:             document.getElementById('f-model').value.trim()            || null,
+    mpn:               document.getElementById('f-mpn').value.trim()              || null,
+    barcode:           document.getElementById('f-barcode').value.trim()          || null,
+    condition:         (document.querySelector('input[name="condition"]:checked') || {}).value || 'new_in_box',
+    category:          document.getElementById('f-category').value                || null,
+    cost_price:        parseFloat(document.getElementById('f-cost').value)        || null,
+    sale_price:        parseFloat(document.getElementById('f-sale').value)        || null,
+    sold_price:        parseFloat(document.getElementById('f-sold-price').value)  || null,
+    sold_date:         document.getElementById('f-sold-date').value               || null,
+    date_listed:       document.getElementById('f-date-listed').value             || null,
+    vendor:            document.getElementById('f-vendor').value.trim()           || null,
+    qty_on_hand:       qty,
+    reorder_threshold: parseInt(document.getElementById('f-threshold').value)     || 0,
+    description:       document.getElementById('f-description').value.trim()      || null,
+    location:          document.getElementById('f-location').value.trim()         || null,
+    notes:             document.getElementById('f-notes').value.trim()            || null,
+    store_cat1:        document.getElementById('f-store-cat1').value.trim()       || null,
+    store_cat2:        document.getElementById('f-store-cat2').value.trim()       || null,
+    country_mfg:       document.getElementById('f-country-mfg').value            || 'United States',
+    wait_to_list:      document.getElementById('f-wait-to-list').checked,
+    need_to_find:      document.getElementById('f-need-to-find').checked,
+  };
+  var { error } = await sb.from('items').update(payload).eq('id', selectedItemId);
+  if (error) { showToast(error.message, 'error'); return; }
+  isDirty = false;
+  // Update in-memory record so nav list stays current without a full reload
+  var item = allItems.find(function(i){ return i.id === selectedItemId; });
+  if (item) Object.assign(item, payload);
+  updateStats();
+  renderNavList();
+  markNavActive(selectedItemId);
+  updateRecordNav();
+  // Flash "✓ Saved" in status bar
+  var el = document.getElementById('rec-saved');
+  if (el) {
+    el.style.opacity = '1';
+    clearTimeout(el._t);
+    el._t = setTimeout(function(){ el.style.opacity = '0'; }, 2000);
   }
 }
 
