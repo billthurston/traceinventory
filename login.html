@@ -589,7 +589,7 @@
         showMsg('Signing you in...', 'success');
         setTimeout(() => window.location.href = 'dashboard.html', 800);
       } catch(e) {
-        showMsg('Connection error — check your internet and try again.');
+        showMsg('Error: ' + (e.message || e));
       } finally {
         setLoading('signin-btn', 'signin-spinner', false);
       }
