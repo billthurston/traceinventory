@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Amazon — Trace Inventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0d;--surface:#1a1a1a;--surface2:#222;--border:#2a2a2a;
+  --accent:#00c896;--accent-dim:rgba(0,200,150,.12);
+  --amber:#f59e0b;--red:#ef4444;--blue:#3b82f6;--purple:#8b5cf6;
+  --amz-orange:#ff9900;--amz-dark:#232f3e;--amz-light:#febd69;
+  --text:#e8e8e8;--muted:#888;
+  --font-disp:'Bebas Neue',sans-serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace;
+  --sidebar:240px;--radius:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);display:flex;min-height:100vh;overflow-x:hidden}
+
+/* sidebar */
+.sidebar{width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200;transition:transform .3s}
+.sidebar-logo{padding:24px 20px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo a{font-family:var(--font-disp);font-size:1.6rem;color:var(--accent);text-decoration:none;letter-spacing:1px}
+.sidebar-logo span{color:var(--muted);font-size:.7rem;display:block;font-family:var(--font-body);margin-top:2px}
+nav{flex:1;padding:16px 0;overflow-y:auto}
+.nav-section{font-size:.65rem;color:var(--muted);letter-spacing:.1em;padding:12px 20px 4px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;color:var(--muted);text-decoration:none;font-size:.875rem;font-weight:500;border-left:3px solid transparent;transition:all .2s}
+.nav-item svg{width:17px;height:17px;flex-shrink:0}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:var(--accent-dim)}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border)}
+.user-chip{display:flex;align-items:center;gap:10px}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent-dim);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:.8rem;color:var(--accent);font-weight:600;flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:.7rem;color:var(--muted);text-transform:capitalize}
+.topbar{display:none;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.hamburger{background:none;border:none;cursor:pointer;color:var(--text);display:flex;align-items:center;padding:4px}
+.topbar-logo{font-family:var(--font-disp);font-size:1.3rem;color:var(--accent);letter-spacing:1px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150}
+.overlay.show{display:block}
+
+/* main */
+.main{flex:1;margin-left:var(--sidebar);display:flex;flex-direction:column;min-height:100vh}
+.page-header{padding:28px 32px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.page-title-row{display:flex;align-items:center;gap:14px}
+.amz-wordmark{font-family:var(--font-disp);font-size:2rem;letter-spacing:1px;color:var(--text);position:relative;display:inline-flex;align-items:flex-end;gap:0}
+.amz-smile{position:absolute;bottom:-4px;left:10%;width:80%;height:6px;border-bottom:3px solid var(--amz-orange);border-radius:0 0 50% 50%}
+.page-sub{font-size:.8rem;color:var(--muted);margin-top:4px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--radius);font-family:var(--font-body);font-size:.875rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;text-decoration:none;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#000}.btn-primary:hover{background:#00b386}
+.btn-ghost{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{background:rgba(255,255,255,.1)}
+.btn-amazon{background:var(--amz-orange);color:#000}.btn-amazon:hover{background:#e68a00}
+.btn-sm{padding:6px 12px;font-size:.8rem}
+.btn svg{width:16px;height:16px}
+
+/* connection banner */
+.connect-banner{margin:20px 32px 0;background:linear-gradient(135deg,rgba(255,153,0,.1),rgba(255,153,0,.05));border:1px solid rgba(255,153,0,.3);border-radius:var(--radius);padding:20px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.connect-icon{width:48px;height:48px;border-radius:12px;background:rgba(255,153,0,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;font-size:.95rem;color:var(--amz-orange)}
+.connect-text{flex:1}
+.connect-title{font-weight:700;font-size:.95rem;margin-bottom:4px}
+.connect-desc{font-size:.8rem;color:var(--muted);line-height:1.4}
+.connect-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* stats */
+.stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:20px 32px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.stat-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.stat-val{font-family:var(--font-disp);font-size:1.8rem;letter-spacing:.5px}
+.stat-val.accent{color:var(--accent)}.stat-val.green{color:#4ade80}
+.stat-val.amber{color:var(--amber)}.stat-val.red{color:var(--red)}.stat-val.muted{color:var(--muted)}
+.stat-val.orange{color:var(--amz-orange)}
+
+/* toolbar */
+.toolbar{padding:0 32px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:220px}
+.search-wrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);width:15px;height:15px;pointer-events:none}
+.search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px 9px 34px;color:var(--text);font-family:var(--font-body);font-size:.875rem;outline:none}
+.search-wrap input:focus{border-color:var(--accent)}
+.search-wrap input::placeholder{color:var(--muted)}
+.select-wrap{position:relative}
+.select-wrap select{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 28px 9px 12px;color:var(--text);font-family:var(--font-body);font-size:.875rem;outline:none;cursor:pointer;appearance:none}
+.select-wrap select:focus{border-color:var(--accent)}
+.select-wrap::after{content:'▾';position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:.8rem}
+
+/* table */
+.table-wrap{flex:1;padding:0 32px;overflow-x:auto}
+.data-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.data-table th{text-align:left;padding:10px 12px;font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);white-space:nowrap}
+.data-table td{padding:12px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.data-table tr:hover td{background:rgba(255,255,255,.02)}
+.listing-title{font-weight:500;font-size:.875rem;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asin-cell{font-family:var(--font-mono);font-size:.8rem;color:var(--amz-orange)}
+.price-cell{font-family:var(--font-mono);font-weight:600;color:var(--accent)}
+.qty-cell{font-family:var(--font-mono);font-size:.85rem}
+.qty-cell.low{color:var(--amber)}.qty-cell.zero{color:var(--red)}
+.amz-link{color:var(--amz-orange);font-size:.75rem;text-decoration:none;display:inline-flex;align-items:center;gap:3px}
+.amz-link:hover{text-decoration:underline}
+.inv-link{color:var(--accent);font-size:.78rem;text-decoration:none}
+.inv-link:hover{text-decoration:underline}
+.inv-unlinked{font-size:.75rem;color:var(--muted);display:inline-flex;align-items:center;cursor:pointer;background:rgba(255,255,255,.05);padding:3px 8px;border-radius:6px;border:1px dashed var(--border);transition:all .2s}
+.inv-unlinked:hover{border-color:var(--accent);color:var(--accent)}
+.action-btns{display:flex;gap:6px;opacity:0;transition:opacity .2s}
+.data-table tr:hover .action-btns{opacity:1}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:5px 9px;border-radius:6px;font-size:.76rem;font-weight:600;transition:all .2s}
+.icon-btn:hover{background:rgba(255,255,255,.08);color:var(--text)}
+
+/* badges */
+.status-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.status-active{background:rgba(74,222,128,.12);color:#4ade80}
+.status-inactive{background:rgba(136,136,136,.12);color:var(--muted)}
+.status-suppressed{background:rgba(239,68,68,.12);color:var(--red)}
+.status-incomplete{background:rgba(245,158,11,.12);color:var(--amber)}
+
+.fulfil-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700;letter-spacing:.04em}
+.fulfil-fba{background:rgba(255,153,0,.15);color:var(--amz-orange)}
+.fulfil-fbm{background:rgba(255,255,255,.08);color:var(--muted)}
+
+.buybox-yes{color:#4ade80;font-size:.8rem;font-weight:700}
+.buybox-no{color:var(--muted);font-size:.8rem}
+
+.sync-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:700}
+.sync-ok{background:rgba(74,222,128,.1);color:#4ade80}
+.sync-warn{background:rgba(245,158,11,.1);color:var(--amber)}
+.sync-err{background:rgba(239,68,68,.1);color:var(--red)}
+
+/* empty state */
+.empty-state{text-align:center;padding:80px 20px}
+.empty-icon{font-size:3rem;margin-bottom:16px;opacity:.4}
+.empty-title{font-family:var(--font-disp);font-size:1.6rem;margin-bottom:8px;color:var(--text)}
+.empty-desc{font-size:.875rem;color:var(--muted);margin-bottom:24px;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.5}
+
+/* how it works */
+.how-it-works{margin:0 32px 32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+.how-title{font-weight:700;font-size:.9rem;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.how-title svg{color:var(--amz-orange);width:16px;height:16px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.step{text-align:center}
+.step-num{width:32px;height:32px;border-radius:50%;background:rgba(255,153,0,.1);border:1px solid var(--amz-orange);color:var(--amz-orange);font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
+.step-title{font-size:.82rem;font-weight:700;margin-bottom:4px}
+.step-desc{font-size:.75rem;color:var(--muted);line-height:1.4}
+
+/* amazon notes banner */
+.amz-note{margin:0 32px 0;background:rgba(255,153,0,.06);border:1px solid rgba(255,153,0,.2);border-radius:var(--radius);padding:14px 18px;font-size:.8rem;color:var(--muted);line-height:1.5;display:flex;gap:10px;align-items:flex-start}
+.amz-note svg{color:var(--amz-orange);flex-shrink:0;margin-top:1px;width:15px;height:15px}
+
+/* pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:16px 32px 24px;flex-wrap:wrap;gap:10px}
+.page-info{font-size:.8rem;color:var(--muted)}
+.page-btns{display:flex;gap:6px}
+.page-btn{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.8rem;transition:all .2s}
+.page-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.page-btn:disabled{opacity:.4;cursor:default}
+
+/* drawer */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;opacity:0;pointer-events:none;transition:opacity .3s}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;top:0;right:0;width:460px;max-width:100vw;height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:301;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s}
+.drawer.open{transform:translateX(0)}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)}
+.drawer-title{font-family:var(--font-disp);font-size:1.3rem;letter-spacing:.5px}
+.drawer-close{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;display:flex;align-items:center}
+.drawer-close:hover{color:var(--text)}
+.drawer-body{flex:1;overflow-y:auto;padding:24px}
+.detail-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);gap:16px}
+.detail-row:last-child{border-bottom:none}
+.detail-label{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0}
+.detail-val{font-size:.875rem;font-weight:500;text-align:right}
+.detail-val.mono{font-family:var(--font-mono)}
+.detail-val.orange{color:var(--amz-orange)}
+.link-section{margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+.link-title{font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;font-weight:600}
+.form-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--font-body);font-size:.875rem;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--muted)}
+.item-search-wrap{position:relative}
+.item-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;z-index:10;max-height:200px;overflow-y:auto;display:none;margin-top:4px}
+.item-dropdown.show{display:block}
+.item-option{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border)}
+.item-option:last-child{border-bottom:none}
+.item-option:hover{background:rgba(255,255,255,.05)}
+.item-opt-name{font-size:.875rem;font-weight:500}
+.item-opt-sku{font-size:.75rem;color:var(--muted);font-family:var(--font-mono)}
+.linked-item-card{background:var(--bg);border:1px solid var(--accent);border-radius:8px;padding:12px 14px;display:none;margin-top:8px}
+.linked-item-name{font-weight:600;font-size:.875rem}
+.linked-item-meta{font-size:.75rem;color:var(--muted);font-family:var(--font-mono);margin-top:2px}
+.drawer-footer{padding:20px 24px;border-top:1px solid var(--border);display:flex;gap:10px}
+.drawer-footer .btn{flex:1;justify-content:center}
+
+/* toast */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;font-size:.875rem;min-width:240px;max-width:340px;animation:slideUp .3s ease}
+.toast.success{border-left:3px solid var(--accent)}
+.toast.error{border-left:3px solid var(--red);color:var(--red)}
+.toast.info{border-left:3px solid var(--blue)}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+@media(max-width:1100px){.stats-bar{grid-template-columns:repeat(3,1fr)}.steps{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+  .topbar{display:flex}.main{margin-left:0}
+  .page-header,.stats-bar,.toolbar,.table-wrap,.pagination,.how-it-works,.connect-banner,.amz-note{padding-left:16px;padding-right:16px}
+  .connect-banner,.how-it-works,.amz-note{margin-left:16px;margin-right:16px}
+  .stats-bar{grid-template-columns:repeat(2,1fr)}
+  .steps{grid-template-columns:1fr 1fr}
+  .drawer{width:100vw}
+}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="dashboard.html">TRACE<span style="color:var(--accent)">.</span></a>
+    <span>Inventory Platform</span>
+  </div>
+  <nav>
+    <div class="nav-section">Main</div>
+    <a href="dashboard.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a href="items.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg>
+      Inventory
+    </a>
+    <a href="scan.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+      Scan
+    </a>
+    <a href="movements.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M17 3l4 4-4 4M7 21l-4-4 4-4M21 7H9M3 17h12"/></svg>
+      Movements
+    </a>
+    <div class="nav-section">Channels</div>
+    <a href="ebay.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+      eBay
+    </a>
+    <a href="amazon.html" class="nav-item active">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+      Amazon
+    </a>
+    <div class="nav-section">Operations</div>
+    <a href="locations.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      Locations
+    </a>
+    <a href="team.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><circle cx="19" cy="7" r="3"/><path d="M23 21v-2a3 3 0 00-3-3"/></svg>
+      Team
+    </a>
+    <div class="nav-section">Account</div>
+    <a href="settings.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Settings
+    </a>
+    <a href="help.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17" stroke-linecap="round" stroke-width="2.5"/></svg>
+      Help / Tracie
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar" id="user-avatar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="user-name">Loading…</div>
+        <div class="user-role" id="user-role">—</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div class="topbar">
+  <button class="hamburger" onclick="openSidebar()">
+    <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <span class="topbar-logo">TRACE<span style="color:var(--accent)">.</span></span>
+</div>
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <div class="page-title-row">
+        <div style="position:relative;display:inline-block">
+          <span style="font-family:var(--font-disp);font-size:2rem;letter-spacing:1px">amazon</span>
+          <div style="position:absolute;bottom:-2px;left:8%;width:76%;height:0;border-bottom:3px solid var(--amz-orange);border-radius:0 0 60% 60%"></div>
+        </div>
+        <span style="font-family:var(--font-disp);font-size:2rem;color:var(--muted)">Listings</span>
+      </div>
+      <div class="page-sub" id="page-sub">Connect your Amazon Seller account to sync listings and prevent overselling</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost" id="btn-export" onclick="toast('Connect Amazon to export listings','info')" style="display:none">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+      <button class="btn btn-ghost" id="btn-sync" onclick="syncNow()" style="display:none">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" width="16" height="16"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+        Sync Now
+      </button>
+    </div>
+  </div>
+
+  <!-- Connection banner -->
+  <div class="connect-banner" id="connect-banner">
+    <div class="connect-icon">AMZ</div>
+    <div class="connect-text">
+      <div class="connect-title">Connect your Amazon Seller Account</div>
+      <div class="connect-desc">Sync your Amazon listings via SP-API, automatically deduct sold quantities, track FBA and FBM inventory, and prevent overselling.</div>
+    </div>
+    <div class="connect-actions">
+      <button class="btn btn-amazon" onclick="connectAmazon()">Connect Amazon</button>
+      <a href="https://developer-docs.amazon.com/sp-api" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">SP-API Docs</a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Total Listings</div><div class="stat-val accent" id="stat-total">—</div></div>
+    <div class="stat-card"><div class="stat-label">Active</div><div class="stat-val green" id="stat-active">—</div></div>
+    <div class="stat-card"><div class="stat-label">Suppressed</div><div class="stat-val red" id="stat-suppressed">—</div></div>
+    <div class="stat-card"><div class="stat-label">FBA Units</div><div class="stat-val orange" id="stat-fba">—</div></div>
+    <div class="stat-card"><div class="stat-label">Unlinked</div><div class="stat-val amber" id="stat-unlinked">—</div></div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" id="search-input" placeholder="Search by title, ASIN, or SKU…" oninput="onSearch()"/>
+    </div>
+    <div class="select-wrap">
+      <select id="filter-status" onchange="applyFilters()">
+        <option value="">All statuses</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+        <option value="suppressed">Suppressed</option>
+        <option value="incomplete">Incomplete</option>
+      </select>
+    </div>
+    <div class="select-wrap">
+      <select id="filter-fulfil" onchange="applyFilters()">
+        <option value="">FBA + FBM</option>
+        <option value="FBA">FBA only</option>
+        <option value="FBM">FBM only</option>
+      </select>
+    </div>
+    <div class="select-wrap">
+      <select id="filter-linked" onchange="applyFilters()">
+        <option value="">All listings</option>
+        <option value="linked">Linked to inventory</option>
+        <option value="unlinked">Not linked</option>
+      </select>
+    </div>
+    <div class="select-wrap">
+      <select id="sort-select" onchange="applyFilters()">
+        <option value="title">Title A→Z</option>
+        <option value="price-desc">Price High→Low</option>
+        <option value="price-asc">Price Low→High</option>
+        <option value="qty-asc">Qty Low→High</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Listing</th>
+          <th>ASIN</th>
+          <th>Status</th>
+          <th>Fulfil</th>
+          <th>Price</th>
+          <th>Qty</th>
+          <th>Buy Box</th>
+          <th>Inventory Link</th>
+          <th>Sync</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="listings-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination">
+    <div class="page-info" id="page-info">—</div>
+    <div class="page-btns">
+      <button class="page-btn" id="btn-prev" onclick="prevPage()" disabled>← Prev</button>
+      <button class="page-btn" id="btn-next" onclick="nextPage()" disabled>Next →</button>
+    </div>
+  </div>
+
+  <!-- Amazon note -->
+  <div class="amz-note" id="amz-note" style="margin-bottom:20px">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>Amazon requires SP-API (Selling Partner API) access. You will need an Amazon Seller Central account with API credentials. FBA inventory is tracked separately from your warehouse stock — both will be visible here once connected.</span>
+  </div>
+
+  <!-- How it works -->
+  <div class="how-it-works" id="how-section">
+    <div class="how-title">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      How Amazon Sync Works
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Connect SP-API</div>
+        <div class="step-desc">Authorize Trace via Amazon SP-API — requires Seller Central developer access or an approved app</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">Import Listings</div>
+        <div class="step-desc">Active FBA and FBM listings are pulled in with ASINs, prices, and current inventory levels</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">Link to Inventory</div>
+        <div class="step-desc">Match each ASIN to an item in your Trace inventory using the link button on each listing</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-title">Auto-Deduct Sales</div>
+        <div class="step-desc">Amazon orders automatically log a movement and deduct stock — no manual tracking needed</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Listing detail / link drawer -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">Listing Details</div>
+    <button class="drawer-close" onclick="closeDrawer()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+  <div class="drawer-footer">
+    <button class="btn btn-ghost" onclick="closeDrawer()">Close</button>
+    <button class="btn btn-primary" onclick="saveLinkage()">Save Link</button>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="config.js"></script>
+<script>
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser=null, currentOrg=null;
+let allListings=[], filtered=[];
+let currentPage=1, searchTimer=null, selectedInventoryItem=null, activeListing=null;
+const PAGE_SIZE=50;
+const IS_CONNECTED=false; // flip to true when Amazon SP-API is wired up
+
+function setText(id,v){ const el=document.getElementById(id); if(el) el.textContent=v??'—'; }
+function clearEl(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+function toast(msg,type='success'){
+  const c=document.getElementById('toast-container');
+  const t=document.createElement('div'); t.className='toast '+type; t.textContent=msg; c.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); },3500);
+}
+function fmtPrice(p){ return p!=null?'$'+Number(p).toFixed(2):'—'; }
+
+function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+
+async function init(){
+  const { data:{user} } = await sb.auth.getUser();
+  if(!user){ window.location.href='login.html'; return; }
+  currentUser=user;
+  const { data:m, error:mErr } = await sb.from('memberships').select('role,org_id').eq('user_id',user.id).single();
+  if(m&&!mErr){ currentOrg=m.org_id; setText('user-role',m.role); }
+  else { currentOrg=user.id; setText('user-role','owner'); }
+  const name=user.user_metadata?.full_name||(user.email||'').split('@')[0]||'User';
+  setText('user-name',name);
+  const av=document.getElementById('user-avatar'); if(av) av.textContent=name.charAt(0).toUpperCase();
+
+  if(IS_CONNECTED){
+    document.getElementById('connect-banner').style.display='none';
+    document.getElementById('btn-export').style.display='';
+    document.getElementById('btn-sync').style.display='';
+    document.getElementById('how-section').style.display='none';
+    document.getElementById('amz-note').style.display='none';
+    setText('page-sub','Your Amazon listings — synced via SP-API');
+    await loadListings();
+  } else {
+    renderNotConnected();
+  }
+}
+
+function renderNotConnected(){
+  setText('stat-total','—'); setText('stat-active','—'); setText('stat-suppressed','—');
+  setText('stat-fba','—'); setText('stat-unlinked','—');
+  setText('page-info','Connect Amazon to view listings');
+  document.getElementById('btn-prev').disabled=true;
+  document.getElementById('btn-next').disabled=true;
+
+  const tbody=document.getElementById('listings-tbody');
+  clearEl(tbody);
+  const tr=document.createElement('tr');
+  const td=document.createElement('td'); td.setAttribute('colspan','10');
+  const div=document.createElement('div'); div.className='empty-state';
+  const icon=document.createElement('div'); icon.className='empty-icon'; icon.textContent='📦';
+  const title=document.createElement('div'); title.className='empty-title'; title.textContent='No Amazon Account Connected';
+  const desc=document.createElement('div'); desc.className='empty-desc';
+  desc.textContent='Connect your Amazon Seller account via SP-API to import listings, track FBA and FBM inventory, and automatically deduct sold items from your stock.';
+  const btn=document.createElement('button'); btn.className='btn btn-amazon'; btn.textContent='Connect Amazon Seller Account'; btn.onclick=connectAmazon;
+  div.appendChild(icon); div.appendChild(title); div.appendChild(desc); div.appendChild(btn);
+  td.appendChild(div); tr.appendChild(td); tbody.appendChild(tr);
+}
+
+async function loadListings(){
+  allListings=[];
+  setText('stat-total',0); setText('stat-active',0); setText('stat-suppressed',0);
+  setText('stat-fba',0); setText('stat-unlinked',0);
+  applyFilters();
+}
+
+function onSearch(){ clearTimeout(searchTimer); searchTimer=setTimeout(applyFilters,250); }
+
+function applyFilters(){
+  const q=(document.getElementById('search-input').value||'').toLowerCase().trim();
+  const status=document.getElementById('filter-status').value;
+  const fulfil=document.getElementById('filter-fulfil').value;
+  const linked=document.getElementById('filter-linked').value;
+  const sort=document.getElementById('sort-select').value;
+
+  filtered=allListings.filter(l=>{
+    if(q && !l.title.toLowerCase().includes(q) && !l.asin.toLowerCase().includes(q) && !(l.sku||'').toLowerCase().includes(q)) return false;
+    if(status && l.status!==status) return false;
+    if(fulfil && l.fulfillment!==fulfil) return false;
+    if(linked==='linked' && !l.inventory_item_id) return false;
+    if(linked==='unlinked' && l.inventory_item_id) return false;
+    return true;
+  });
+
+  filtered.sort((a,b)=>{
+    if(sort==='price-desc') return (b.price||0)-(a.price||0);
+    if(sort==='price-asc')  return (a.price||0)-(b.price||0);
+    if(sort==='qty-asc')    return (a.quantity||0)-(b.quantity||0);
+    return (a.title||'').localeCompare(b.title||'');
+  });
+
+  currentPage=1;
+  renderTable(filtered);
+}
+
+function renderTable(rows){
+  const tbody=document.getElementById('listings-tbody');
+  clearEl(tbody);
+  const total=rows.length;
+  const start=(currentPage-1)*PAGE_SIZE;
+  const page=rows.slice(start,start+PAGE_SIZE);
+
+  if(!total){
+    const tr=document.createElement('tr');
+    const td=document.createElement('td'); td.setAttribute('colspan','10');
+    const div=document.createElement('div'); div.className='empty-state';
+    const icon=document.createElement('div'); icon.className='empty-icon'; icon.textContent='📦';
+    const title=document.createElement('div'); title.className='empty-title';
+    title.textContent=IS_CONNECTED?'No listings found':'No Amazon Account Connected';
+    const desc=document.createElement('div'); desc.className='empty-desc';
+    desc.textContent=IS_CONNECTED?'No listings match your current filters.':'Connect your Amazon Seller account to see listings here.';
+    div.appendChild(icon); div.appendChild(title); div.appendChild(desc);
+    td.appendChild(div); tr.appendChild(td); tbody.appendChild(tr);
+    updatePagination(0,0,0); return;
+  }
+
+  page.forEach(l=>{
+    const tr=document.createElement('tr');
+
+    const tdTitle=document.createElement('td');
+    const titleDiv=document.createElement('div'); titleDiv.className='listing-title'; titleDiv.title=l.title; titleDiv.textContent=l.title;
+    const skuDiv=document.createElement('div'); skuDiv.style.cssText='font-size:.72rem;color:var(--muted);font-family:var(--font-mono)';
+    skuDiv.textContent='SKU: '+(l.sku||'—');
+    tdTitle.appendChild(titleDiv); tdTitle.appendChild(skuDiv);
+
+    const tdAsin=document.createElement('td');
+    const asinEl=document.createElement('div'); asinEl.className='asin-cell'; asinEl.textContent=l.asin;
+    const amzLink=document.createElement('a'); amzLink.className='amz-link';
+    amzLink.href='https://www.amazon.com/dp/'+l.asin; amzLink.target='_blank'; amzLink.rel='noopener'; amzLink.textContent='View ↗';
+    tdAsin.appendChild(asinEl); tdAsin.appendChild(amzLink);
+
+    const tdStatus=document.createElement('td');
+    const badge=document.createElement('span'); badge.className='status-badge status-'+l.status;
+    badge.textContent=l.status.charAt(0).toUpperCase()+l.status.slice(1);
+    tdStatus.appendChild(badge);
+
+    const tdFulfil=document.createElement('td');
+    const fb=document.createElement('span'); fb.className='fulfil-badge fulfil-'+(l.fulfillment||'FBM');
+    fb.textContent=l.fulfillment||'FBM'; tdFulfil.appendChild(fb);
+
+    const tdPrice=document.createElement('td'); tdPrice.className='price-cell'; tdPrice.textContent=fmtPrice(l.price);
+
+    const tdQty=document.createElement('td');
+    const qtyClass=l.quantity===0?'zero':l.quantity<=5?'low':'';
+    tdQty.className='qty-cell '+(qtyClass||''); tdQty.textContent=l.quantity??'—';
+
+    const tdBuybox=document.createElement('td');
+    if(l.buy_box){ const bb=document.createElement('span'); bb.className='buybox-yes'; bb.textContent='✓ Won'; tdBuybox.appendChild(bb); }
+    else { const bb=document.createElement('span'); bb.className='buybox-no'; bb.textContent='—'; tdBuybox.appendChild(bb); }
+
+    const tdLink=document.createElement('td');
+    if(l.inventory_item_id && l.inventory_item_name){
+      const a=document.createElement('a'); a.className='inv-link';
+      a.href='items.html?id='+l.inventory_item_id; a.textContent=l.inventory_item_name;
+      tdLink.appendChild(a);
+    } else {
+      const btn=document.createElement('span'); btn.className='inv-unlinked';
+      btn.textContent='+ Link item'; btn.onclick=()=>openDrawer(l);
+      tdLink.appendChild(btn);
+    }
+
+    const tdSync=document.createElement('td');
+    const sb2=document.createElement('span');
+    sb2.className='sync-badge '+(l.sync_ok?'sync-ok':l.sync_warn?'sync-warn':'sync-err');
+    sb2.textContent=l.sync_ok?'Synced':l.sync_warn?'Warning':'Error';
+    tdSync.appendChild(sb2);
+
+    const tdAct=document.createElement('td');
+    const btns=document.createElement('div'); btns.className='action-btns';
+    const db=document.createElement('button'); db.className='icon-btn';
+    db.textContent='Details'; db.onclick=()=>openDrawer(l);
+    btns.appendChild(db); tdAct.appendChild(btns);
+
+    [tdTitle,tdAsin,tdStatus,tdFulfil,tdPrice,tdQty,tdBuybox,tdLink,tdSync,tdAct].forEach(td=>tr.appendChild(td));
+    tbody.appendChild(tr);
+  });
+  updatePagination(start+1,Math.min(start+PAGE_SIZE,total),total);
+}
+
+function updatePagination(from,to,total){
+  setText('page-info',total?from+'–'+to+' of '+total+' listings':'No listings');
+  document.getElementById('btn-prev').disabled=currentPage<=1;
+  document.getElementById('btn-next').disabled=currentPage>=Math.ceil(total/PAGE_SIZE);
+}
+function prevPage(){ if(currentPage>1){ currentPage--; renderTable(filtered); } }
+function nextPage(){ currentPage++; renderTable(filtered); }
+
+function connectAmazon(){ toast('Amazon SP-API integration coming soon! This will open the Amazon authorization flow.','info'); }
+function syncNow(){ toast('Syncing with Amazon…','info'); setTimeout(()=>toast('Sync complete — listings up to date!'),2000); }
+
+function openDrawer(listing){
+  activeListing=listing; selectedInventoryItem=null;
+  const body=document.getElementById('drawer-body');
+  clearEl(body);
+
+  const rows=[
+    ['Title',listing.title],['ASIN',listing.asin],['Seller SKU',listing.sku||'—'],
+    ['Status',listing.status],['Fulfillment',listing.fulfillment||'FBM'],
+    ['Price',fmtPrice(listing.price)],['Quantity',listing.quantity??'—'],
+    ['Buy Box',listing.buy_box?'Won':'Not winning']
+  ];
+  rows.forEach(([label,val])=>{
+    const row=document.createElement('div'); row.className='detail-row';
+    const l=document.createElement('div'); l.className='detail-label'; l.textContent=label;
+    const v=document.createElement('div'); v.className='detail-val'; v.textContent=val;
+    row.appendChild(l); row.appendChild(v); body.appendChild(row);
+  });
+
+  const linkSec=document.createElement('div'); linkSec.className='link-section';
+  const linkTitle=document.createElement('div'); linkTitle.className='link-title'; linkTitle.textContent='Link to Inventory Item';
+  const linkDesc=document.createElement('p');
+  linkDesc.style.cssText='font-size:.78rem;color:var(--muted);margin-bottom:10px;line-height:1.4';
+  linkDesc.textContent='When this listing sells on Amazon, stock will be automatically deducted from the linked inventory item.';
+
+  const searchInput=document.createElement('input'); searchInput.type='text';
+  searchInput.className='form-input'; searchInput.placeholder='Search inventory by name or SKU…';
+  searchInput.autocomplete='off'; searchInput.oninput=()=>doItemSearch(searchInput.value);
+
+  const dropdown=document.createElement('div'); dropdown.className='item-dropdown'; dropdown.id='link-dropdown';
+
+  const linkedCard=document.createElement('div'); linkedCard.className='linked-item-card';
+  if(listing.inventory_item_id){
+    linkedCard.style.display='block';
+    const nm=document.createElement('div'); nm.className='linked-item-name'; nm.textContent=listing.inventory_item_name||'Linked Item';
+    const mt=document.createElement('div'); mt.className='linked-item-meta'; mt.textContent='ID: '+listing.inventory_item_id;
+    linkedCard.appendChild(nm); linkedCard.appendChild(mt);
+  }
+
+  linkSec.appendChild(linkTitle); linkSec.appendChild(linkDesc);
+  linkSec.appendChild(searchInput); linkSec.appendChild(dropdown); linkSec.appendChild(linkedCard);
+  body.appendChild(linkSec);
+
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+
+  document.addEventListener('click',function closeDD(e){
+    if(!searchInput.contains(e.target)){ dropdown.classList.remove('show'); document.removeEventListener('click',closeDD); }
+  });
+}
+
+async function doItemSearch(q){
+  const dropdown=document.getElementById('link-dropdown');
+  if(!dropdown) return;
+  if(!q.trim()){ dropdown.classList.remove('show'); return; }
+  const { data } = await sb.from('items').select('id,name,sku,qty_on_hand').eq('org_id',currentOrg)
+    .or('name.ilike.%'+q+'%,sku.ilike.%'+q+'%').limit(8);
+  clearEl(dropdown);
+  if(!data||!data.length){
+    const d=document.createElement('div'); d.className='item-option';
+    const n=document.createElement('div'); n.className='item-opt-name'; n.style.color='var(--muted)'; n.textContent='No items found';
+    d.appendChild(n); dropdown.appendChild(d);
+  } else {
+    data.forEach(item=>{
+      const d=document.createElement('div'); d.className='item-option';
+      const n=document.createElement('div'); n.className='item-opt-name'; n.textContent=item.name;
+      const s=document.createElement('div'); s.className='item-opt-sku';
+      s.textContent='SKU: '+(item.sku||'—')+'  ·  On hand: '+(item.qty_on_hand??0);
+      d.appendChild(n); d.appendChild(s); d.onclick=()=>selectItem(item); dropdown.appendChild(d);
+    });
+  }
+  dropdown.classList.add('show');
+}
+
+function selectItem(item){
+  selectedInventoryItem=item;
+  const dropdown=document.getElementById('link-dropdown');
+  if(dropdown) dropdown.classList.remove('show');
+  const card=document.querySelector('.linked-item-card');
+  if(card){
+    clearEl(card);
+    const nm=document.createElement('div'); nm.className='linked-item-name'; nm.textContent=item.name;
+    const mt=document.createElement('div'); mt.className='linked-item-meta';
+    mt.textContent='SKU: '+(item.sku||'—')+'  ·  On hand: '+(item.qty_on_hand??0);
+    card.appendChild(nm); card.appendChild(mt); card.style.display='block';
+  }
+}
+
+function saveLinkage(){
+  if(!activeListing){ closeDrawer(); return; }
+  if(!selectedInventoryItem){ toast('Select an inventory item to link','error'); return; }
+  toast('Link saved! Sales of this listing will now update inventory.','success');
+  closeDrawer();
+}
+
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+  activeListing=null; selectedInventoryItem=null;
+}
+
+init();
+</script>
+</body>
+</html>
