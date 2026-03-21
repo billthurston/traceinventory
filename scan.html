@@ -639,7 +639,16 @@
       .hamburger { display:flex; }
       .content { padding: 16px; }
     }
+/* ── NAV DOCK ── */
+[data-nav="right"] .sidebar{position:fixed;left:auto;right:0;border-right:none;border-left:1px solid var(--border)}
+[data-nav="right"] .main{margin-left:0;margin-right:var(--nav-w)}
+.nav-toggle-btn{width:100%;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,.04);cursor:pointer;color:var(--muted);font-size:0;font-family:var(--font-body);font-weight:600;transition:all .2s;text-align:center}
+.nav-toggle-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.nav-toggle-btn::before{font-size:.8rem;content:'Nav Left'}
+[data-nav="right"] .nav-toggle-btn::before{content:'Nav Right'}
+.nav-pos-wrap{padding:10px 20px;border-top:1px solid var(--border)}
   </style>
+<script>document.documentElement.dataset.nav=localStorage.getItem('navPos')||'left'</script>
 </head>
 <body>
 
@@ -670,6 +679,9 @@
       <a class="nav-item" href="help.html"><i class="nav-icon">&#9632;</i> Help / Tracie</a>
     </nav>
 
+    <div class="nav-pos-wrap">
+    <button class="nav-toggle-btn" onclick="toggleNavPos()"></button>
+  </div>
     <div class="sidebar-footer">
       <div class="user-row">
         <div class="user-avatar" id="user-initials">—</div>
@@ -822,6 +834,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script>
+function toggleNavPos(){var p=document.documentElement.dataset.nav==='right'?'left':'right';document.documentElement.dataset.nav=p;localStorage.setItem('navPos',p)}
     const { createClient } = supabase;
     const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 

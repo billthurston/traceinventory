@@ -10,12 +10,13 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0d0d0d;--surface:#1a1a1a;--surface2:#222;--border:#2a2a2a;
-  --accent:#00c896;--accent-dim:rgba(0,200,150,.12);
-  --amber:#f59e0b;--red:#ef4444;--blue:#3b82f6;--purple:#8b5cf6;
-  --text:#e8e8e8;--muted:#888;
+  --bg:#0a0d0f;--surface:#111518;--surface2:#181d21;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+  --accent:#00c896;--accent-dim:rgba(0,200,150,.12);--accent2:#00a87e;
+  --amber:#f5a623;--red:#e8433a;--blue:#3b82f6;--purple:#8b5cf6;
+  --text:#e8eaeb;--muted:#7a8690;--muted2:#4a5560;
   --font-disp:'Bebas Neue',sans-serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace;
-  --sidebar:240px;--radius:10px;
+  --sidebar:240px;--nav-w:240px;--radius:10px;
 }
 body{background:var(--bg);color:var(--text);font-family:var(--font-body);display:flex;min-height:100vh;overflow-x:hidden}
 
@@ -36,7 +37,7 @@ nav{flex:1;padding:16px 0;overflow-y:auto}
 .user-info{flex:1;min-width:0}
 .user-name{font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .user-role{font-size:.7rem;color:var(--muted);text-transform:capitalize}
-.topbar{display:none;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.topbar{display:none;align-items:center;gap:12px;padding:12px 16px;background:rgba(10,13,15,.8);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
 .hamburger{background:none;border:none;cursor:pointer;color:var(--text);display:flex;align-items:center;padding:4px}
 .topbar-logo{font-family:var(--font-disp);font-size:1.3rem;color:var(--accent);letter-spacing:1px}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150}
@@ -185,7 +186,16 @@ nav{flex:1;padding:16px 0;overflow-y:auto}
   .settings-layout{padding:16px;gap:16px}
   .page-header{padding:20px 16px 0}
 }
+/* ── NAV DOCK ── */
+[data-nav="right"] .sidebar{position:fixed;left:auto;right:0;border-right:none;border-left:1px solid var(--border)}
+[data-nav="right"] .main{margin-left:0;margin-right:var(--nav-w)}
+.nav-toggle-btn{width:100%;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,.04);cursor:pointer;color:var(--muted);font-size:0;font-family:var(--font-body);font-weight:600;transition:all .2s;text-align:center}
+.nav-toggle-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.nav-toggle-btn::before{font-size:.8rem;content:'Nav Left'}
+[data-nav="right"] .nav-toggle-btn::before{content:'Nav Right'}
+.nav-pos-wrap{padding:10px 20px;border-top:1px solid var(--border)}
 </style>
+<script>document.documentElement.dataset.nav=localStorage.getItem('navPos')||'left'</script>
 </head>
 <body>
 
@@ -242,6 +252,9 @@ nav{flex:1;padding:16px 0;overflow-y:auto}
       Help / Tracie
     </a>
   </nav>
+  <div class="nav-pos-wrap">
+    <button class="nav-toggle-btn" onclick="toggleNavPos()"></button>
+  </div>
   <div class="sidebar-footer">
     <div class="user-chip">
       <div class="avatar" id="user-avatar">?</div>
@@ -592,6 +605,7 @@ nav{flex:1;padding:16px 0;overflow-y:auto}
 
 <script src="config.js"></script>
 <script>
+function toggleNavPos(){var p=document.documentElement.dataset.nav==='right'?'left':'right';document.documentElement.dataset.nav=p;localStorage.setItem('navPos',p)}
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null, currentOrg = null, currentRole = null;
