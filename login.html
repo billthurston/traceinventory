@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window._sbLoadFailed=true"></script>
   <style>
     /* REF: AUTH.LOGIN.FORM */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -523,8 +523,29 @@
   <script>
     // REF: AUTH.LOGIN.FORM
 
-    const { createClient } = supabase;
-    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Safe Supabase init — CDN may fail to load
+    let sb = null;
+    try {
+      if (window._sbLoadFailed || typeof supabase === 'undefined') {
+        throw new Error('Supabase library did not load.');
+      }
+      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch(initErr) {
+      console.error('Supabase init:', initErr);
+    }
+
+    function requireSb() {
+      if (!sb) {
+        showMsg('Authentication unavailable — check your internet connection and refresh the page.');
+        return false;
+      }
+      return true;
+    }
+
+    // Show error banner immediately if CDN failed
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!sb) showMsg('Authentication unavailable — check your internet connection and refresh the page.');
+    });
 
     // ── UTILS ──
     function showMsg(text, type = 'error') {
@@ -578,6 +599,7 @@
 
     // ── SIGN IN ──
     async function handleSignIn() {
+      if (!requireSb()) return;
       const email = document.getElementById('signin-email').value.trim();
       const password = document.getElementById('signin-password').value;
       if (!email || !password) { showMsg('Please enter your email and password.'); return; }
@@ -597,6 +619,7 @@
 
     // ── SIGN UP ──
     async function handleSignUp() {
+      if (!requireSb()) return;
       const name = document.getElementById('signup-name').value.trim();
       const email = document.getElementById('signup-email').value.trim();
       const password = document.getElementById('signup-password').value;
@@ -620,6 +643,7 @@
 
     // ── MAGIC LINK ──
     async function handleMagicLink() {
+      if (!requireSb()) return;
       const email = document.getElementById('signin-email').value.trim();
       if (!email) { showMsg('Enter your email address first.'); return; }
       hideMsg();
@@ -634,6 +658,7 @@
 
     // ── FORGOT PASSWORD ──
     async function handleForgot() {
+      if (!requireSb()) return;
       const email = document.getElementById('forgot-email').value.trim();
       if (!email) { showMsg('Please enter your email address.'); return; }
       hideMsg();
@@ -661,8 +686,11 @@
 
     // ── CHECK EXISTING SESSION ──
     (async () => {
-      const { data: { session } } = await sb.auth.getSession();
-      if (session) window.location.href = 'dashboard.html';
+      if (!sb) return;
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) window.location.href = 'dashboard.html';
+      } catch(e) { /* ignore — user stays on login page */ }
     })();
   </script>
 
