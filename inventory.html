@@ -156,6 +156,14 @@ textarea.form-input{resize:vertical;min-height:90px;line-height:1.5}
 .toast.success{border-left:3px solid var(--accent);color:var(--accent)}
 .toast.error{border-left:3px solid var(--red);color:var(--red)}
 .toast.info{border-left:3px solid var(--blue);color:var(--blue)}
+/* ── RECORD NAV ── */
+.record-nav{display:flex;align-items:center;gap:3px;padding:8px;border-top:1px solid var(--border);background:var(--surface2);flex-shrink:0;}
+.rec-btn{background:none;border:1px solid var(--border);border-radius:5px;color:var(--muted);width:26px;height:26px;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;padding:0;}
+.rec-btn:hover:not(:disabled){border-color:var(--border2);color:var(--text);background:rgba(255,255,255,.06)}
+.rec-btn:disabled{opacity:.22;cursor:not-allowed}
+.rec-btn.rec-new{border-color:rgba(0,200,150,.25);color:var(--accent);margin-left:auto;font-size:13px;}
+.rec-btn.rec-new:hover:not(:disabled){background:var(--accent-dim);border-color:rgba(0,200,150,.4)}
+.rec-counter{flex:1;text-align:center;font-family:var(--font-mono);font-size:.66rem;color:var(--muted);white-space:nowrap;user-select:none;}
 /* ── MOBILE ── */
 @media(max-width:900px){
   .main{margin-left:0;margin-right:0}
@@ -272,6 +280,14 @@ textarea.form-input{resize:vertical;min-height:90px;line-height:1.5}
         <input class="item-nav-search" id="nav-search" placeholder="Search items…" oninput="onNavSearch()" type="text" autocomplete="off">
       </div>
       <div class="item-nav-list" id="item-nav-list"></div>
+      <div class="record-nav">
+        <button class="rec-btn" id="rec-first" onclick="navFirst()" title="First record">&#9198;</button>
+        <button class="rec-btn" id="rec-prev"  onclick="navPrev()"  title="Previous record">&#9664;</button>
+        <div class="rec-counter" id="rec-counter">— / —</div>
+        <button class="rec-btn" id="rec-next"  onclick="navNext()"  title="Next record">&#9654;</button>
+        <button class="rec-btn" id="rec-last"  onclick="navLast()"  title="Last record">&#9197;</button>
+        <button class="rec-btn rec-new" onclick="clearPanels()" title="New record">&#43;</button>
+      </div>
     </div>
 
     <!-- RIGHT: Panel Area -->
@@ -627,6 +643,7 @@ function filterList(q) {
 function renderNavList() {
   var list = document.getElementById('item-nav-list');
   clearEl(list);
+  updateRecordNav();
   if (filteredItems.length === 0) {
     var empty = document.createElement('div');
     empty.className = 'nav-empty';
@@ -678,6 +695,47 @@ function renderNavList() {
   });
 }
 
+function updateRecordNav() {
+  var total = filteredItems.length;
+  var idx = selectedItemId ? filteredItems.findIndex(function(i){ return i.id === selectedItemId; }) : -1;
+  var pos = idx >= 0 ? idx + 1 : 0;
+  setText('rec-counter', total === 0 ? '— / 0' : (pos > 0 ? pos + ' / ' + total : '— / ' + total));
+  document.getElementById('rec-first').disabled = (idx <= 0);
+  document.getElementById('rec-prev').disabled  = (idx <= 0);
+  document.getElementById('rec-next').disabled  = (idx < 0 || idx >= total - 1);
+  document.getElementById('rec-last').disabled  = (idx < 0 || idx >= total - 1);
+}
+
+function navFirst() {
+  if (!filteredItems.length) return;
+  if (isDirty && !confirm('Unsaved changes — discard and navigate?')) return;
+  isDirty = false;
+  selectItem(filteredItems[0].id);
+}
+
+function navLast() {
+  if (!filteredItems.length) return;
+  if (isDirty && !confirm('Unsaved changes — discard and navigate?')) return;
+  isDirty = false;
+  selectItem(filteredItems[filteredItems.length - 1].id);
+}
+
+function navPrev() {
+  var idx = filteredItems.findIndex(function(i){ return i.id === selectedItemId; });
+  if (idx <= 0) return;
+  if (isDirty && !confirm('Unsaved changes — discard and navigate?')) return;
+  isDirty = false;
+  selectItem(filteredItems[idx - 1].id);
+}
+
+function navNext() {
+  var idx = filteredItems.findIndex(function(i){ return i.id === selectedItemId; });
+  if (idx < 0 || idx >= filteredItems.length - 1) return;
+  if (isDirty && !confirm('Unsaved changes — discard and navigate?')) return;
+  isDirty = false;
+  selectItem(filteredItems[idx + 1].id);
+}
+
 function selectItem(id) {
   selectedItemId = id;
   var item = allItems.find(function(i){ return i.id === id; });
@@ -688,6 +746,7 @@ function selectItem(id) {
   document.body.classList.add('item-selected');
   document.getElementById('btn-save').disabled = false;
   document.getElementById('btn-delete').disabled = false;
+  updateRecordNav();
 }
 
 function populatePanels(item) {
@@ -766,6 +825,7 @@ function clearPanels() {
   document.getElementById('btn-save').disabled = false;
   document.getElementById('btn-delete').disabled = true;
   document.getElementById('f-name').focus();
+  updateRecordNav();
 }
 
 function showPanels() {
@@ -775,6 +835,7 @@ function showPanels() {
 function showNoSelection() {
   document.getElementById('panel-grid').style.display = 'none';
   showEl('no-selection');
+  updateRecordNav();
 }
 
 async function saveItem() {
