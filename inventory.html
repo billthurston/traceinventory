@@ -602,13 +602,14 @@ async function init() {
   handleUrlParams();
   document.getElementById('panel-grid').addEventListener('input', markDirty);
   document.getElementById('panel-grid').addEventListener('change', markDirty);
-  document.getElementById('panel-grid').addEventListener('blur', function() {
+  // focusout bubbles (unlike blur) so it reaches the panel-grid listener
+  document.getElementById('panel-grid').addEventListener('focusout', function() {
     if (!selectedItemId || !isDirty) return;
     clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(function() {
       if (selectedItemId && isDirty) saveItemSilent();
     }, 600);
-  }, true);
+  });
 }
 
 async function loadUser() {
@@ -719,9 +720,8 @@ function renderNavList() {
     row.appendChild(skuEl);
     row.appendChild(qtyEl);
 
-    row.addEventListener('click', function() {
-      if (isDirty && !confirm('Unsaved changes — discard and switch items?')) return;
-      isDirty = false;
+    row.addEventListener('click', async function() {
+      await saveBefore();
       selectItem(item.id);
     });
 
@@ -746,33 +746,29 @@ function updateRecordNav() {
   document.getElementById('rec-m-last').disabled  = atEnd;
 }
 
-function navFirst() {
+async function navFirst() {
   if (!filteredItems.length) return;
-  if (isDirty && !confirm('Unsaved changes — discard and navigate?')) return;
-  isDirty = false;
+  await saveBefore();
   selectItem(filteredItems[0].id);
 }
 
-function navLast() {
+async function navLast() {
   if (!filteredItems.length) return;
-  if (isDirty && !confirm('Unsaved changes — discard and navigate?')) return;
-  isDirty = false;
+  await saveBefore();
   selectItem(filteredItems[filteredItems.length - 1].id);
 }
 
-function navPrev() {
+async function navPrev() {
   var idx = filteredItems.findIndex(function(i){ return i.id === selectedItemId; });
   if (idx <= 0) return;
-  if (isDirty && !confirm('Unsaved changes — discard and navigate?')) return;
-  isDirty = false;
+  await saveBefore();
   selectItem(filteredItems[idx - 1].id);
 }
 
-function navNext() {
+async function navNext() {
   var idx = filteredItems.findIndex(function(i){ return i.id === selectedItemId; });
   if (idx < 0 || idx >= filteredItems.length - 1) return;
-  if (isDirty && !confirm('Unsaved changes — discard and navigate?')) return;
-  isDirty = false;
+  await saveBefore();
   selectItem(filteredItems[idx + 1].id);
 }
 
@@ -829,8 +825,8 @@ function populatePanels(item) {
   loadQtySold(item.id);
 }
 
-function clearPanels() {
-  if (isDirty && !confirm('Unsaved changes — discard and start a new item?')) return;
+async function clearPanels() {
+  await saveBefore();
   selectedItemId = null;
   isDirty = false;
   document.getElementById('f-name').value = '';
@@ -949,6 +945,12 @@ async function saveItem() {
     var updated = allItems.find(function(i){ return i.id === selectedItemId; });
     if (updated) { populatePanels(updated); isDirty = false; }
   }
+}
+
+async function saveBefore() {
+  if (!selectedItemId || !isDirty) return;
+  clearTimeout(autoSaveTimer);
+  await saveItemSilent();
 }
 
 async function saveItemSilent() {
