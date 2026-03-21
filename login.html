@@ -583,11 +583,16 @@
       if (!email || !password) { showMsg('Please enter your email and password.'); return; }
       hideMsg();
       setLoading('signin-btn', 'signin-spinner', true);
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-      setLoading('signin-btn', 'signin-spinner', false);
-      if (error) { showMsg(error.message); return; }
-      showMsg('Signing you in...', 'success');
-      setTimeout(() => window.location.href = 'dashboard.html', 800);
+      try {
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) { showMsg(error.message); return; }
+        showMsg('Signing you in...', 'success');
+        setTimeout(() => window.location.href = 'dashboard.html', 800);
+      } catch(e) {
+        showMsg('Connection error — check your internet and try again.');
+      } finally {
+        setLoading('signin-btn', 'signin-spinner', false);
+      }
     }
 
     // ── SIGN UP ──
@@ -599,13 +604,18 @@
       if (password.length < 8) { showMsg('Password must be at least 8 characters.'); return; }
       hideMsg();
       setLoading('signup-btn', 'signup-spinner', true);
-      const { error } = await sb.auth.signUp({
-        email, password,
-        options: { data: { full_name: name } }
-      });
-      setLoading('signup-btn', 'signup-spinner', false);
-      if (error) { showMsg(error.message); return; }
-      showMsg('Account created! Check your email to confirm your address.', 'success');
+      try {
+        const { error } = await sb.auth.signUp({
+          email, password,
+          options: { data: { full_name: name } }
+        });
+        if (error) { showMsg(error.message); return; }
+        showMsg('Account created! Check your email to confirm your address.', 'success');
+      } catch(e) {
+        showMsg('Connection error — check your internet and try again.');
+      } finally {
+        setLoading('signup-btn', 'signup-spinner', false);
+      }
     }
 
     // ── MAGIC LINK ──
@@ -613,9 +623,13 @@
       const email = document.getElementById('signin-email').value.trim();
       if (!email) { showMsg('Enter your email address first.'); return; }
       hideMsg();
-      const { error } = await sb.auth.signInWithOtp({ email });
-      if (error) { showMsg(error.message); return; }
-      showMsg('Magic link sent! Check your inbox.', 'success');
+      try {
+        const { error } = await sb.auth.signInWithOtp({ email });
+        if (error) { showMsg(error.message); return; }
+        showMsg('Magic link sent! Check your inbox.', 'success');
+      } catch(e) {
+        showMsg('Connection error — check your internet and try again.');
+      }
     }
 
     // ── FORGOT PASSWORD ──
@@ -624,12 +638,17 @@
       if (!email) { showMsg('Please enter your email address.'); return; }
       hideMsg();
       setLoading('forgot-btn', 'forgot-spinner', true);
-      const { error } = await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/reset-password.html'
-      });
-      setLoading('forgot-btn', 'forgot-spinner', false);
-      if (error) { showMsg(error.message); return; }
-      showMsg('Reset link sent! Check your inbox.', 'success');
+      try {
+        const { error } = await sb.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + '/reset-password.html'
+        });
+        if (error) { showMsg(error.message); return; }
+        showMsg('Reset link sent! Check your inbox.', 'success');
+      } catch(e) {
+        showMsg('Connection error — check your internet and try again.');
+      } finally {
+        setLoading('forgot-btn', 'forgot-spinner', false);
+      }
     }
 
     // ── ENTER KEY ──
