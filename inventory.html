@@ -156,14 +156,24 @@ textarea.form-input{resize:vertical;min-height:90px;line-height:1.5}
 .toast.success{border-left:3px solid var(--accent);color:var(--accent)}
 .toast.error{border-left:3px solid var(--red);color:var(--red)}
 .toast.info{border-left:3px solid var(--blue);color:var(--blue)}
-/* ── RECORD NAV ── */
-.record-nav{display:flex;align-items:center;gap:3px;padding:8px;border-top:1px solid var(--border);background:var(--surface2);flex-shrink:0;}
-.rec-btn{background:none;border:1px solid var(--border);border-radius:5px;color:var(--muted);width:26px;height:26px;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;padding:0;}
-.rec-btn:hover:not(:disabled){border-color:var(--border2);color:var(--text);background:rgba(255,255,255,.06)}
-.rec-btn:disabled{opacity:.22;cursor:not-allowed}
-.rec-btn.rec-new{border-color:rgba(0,200,150,.25);color:var(--accent);margin-left:auto;font-size:13px;}
-.rec-btn.rec-new:hover:not(:disabled){background:var(--accent-dim);border-color:rgba(0,200,150,.4)}
-.rec-counter{flex:1;text-align:center;font-family:var(--font-mono);font-size:.66rem;color:var(--muted);white-space:nowrap;user-select:none;}
+/* ── RECORD CONTROL PANEL ── */
+.rec-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;max-width:960px;margin-bottom:16px;}
+.rec-panel-hdr{background:var(--accent);color:#000;font-family:var(--font-disp);font-size:13px;letter-spacing:.1em;padding:8px 14px;text-align:center;}
+.rec-panel-body{padding:14px;}
+.rec-nav-grid{display:grid;grid-template-columns:1fr 1fr auto;grid-template-rows:auto auto;gap:8px;margin-bottom:12px;}
+.rec-nav-btn{background:var(--surface2);border:2px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:.82rem;font-weight:600;padding:16px 10px;cursor:pointer;transition:all .15s;line-height:1.5;text-align:center;box-shadow:0 2px 4px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05);}
+.rec-nav-btn:hover:not(:disabled){background:rgba(255,255,255,.06);border-color:var(--border2);transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08);}
+.rec-nav-btn:active:not(:disabled){transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(0,0,0,.4);}
+.rec-nav-btn:disabled{opacity:.2;cursor:not-allowed;transform:none;box-shadow:none;}
+.rec-nav-new{grid-row:1/3;grid-column:3;background:rgba(0,200,150,.12);border-color:rgba(0,200,150,.35);color:var(--accent);font-size:.92rem;padding:16px 28px;}
+.rec-nav-new:hover:not(:disabled){background:rgba(0,200,150,.2);border-color:var(--accent);}
+/* status bar */
+.rec-status{display:flex;align-items:center;gap:4px;border-top:1px solid var(--border);padding-top:10px;}
+.rec-status-label{font-size:.76rem;color:var(--muted);font-family:var(--font-mono);margin-right:2px;white-space:nowrap;}
+.rec-micro{background:none;border:1px solid var(--border);border-radius:3px;color:var(--muted);width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;padding:0;flex-shrink:0;}
+.rec-micro:hover:not(:disabled){border-color:var(--border2);color:var(--text);background:rgba(255,255,255,.05);}
+.rec-micro:disabled{opacity:.2;cursor:not-allowed;}
+.rec-status-counter{flex:1;text-align:center;font-family:var(--font-mono);font-size:.82rem;font-weight:500;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 10px;user-select:none;}
 /* ── MOBILE ── */
 @media(max-width:900px){
   .main{margin-left:0;margin-right:0}
@@ -280,19 +290,33 @@ textarea.form-input{resize:vertical;min-height:90px;line-height:1.5}
         <input class="item-nav-search" id="nav-search" placeholder="Search items…" oninput="onNavSearch()" type="text" autocomplete="off">
       </div>
       <div class="item-nav-list" id="item-nav-list"></div>
-      <div class="record-nav">
-        <button class="rec-btn" id="rec-first" onclick="navFirst()" title="First record">&#9198;</button>
-        <button class="rec-btn" id="rec-prev"  onclick="navPrev()"  title="Previous record">&#9664;</button>
-        <div class="rec-counter" id="rec-counter">— / —</div>
-        <button class="rec-btn" id="rec-next"  onclick="navNext()"  title="Next record">&#9654;</button>
-        <button class="rec-btn" id="rec-last"  onclick="navLast()"  title="Last record">&#9197;</button>
-        <button class="rec-btn rec-new" onclick="clearPanels()" title="New record">&#43;</button>
-      </div>
     </div>
 
     <!-- RIGHT: Panel Area -->
     <div class="panel-area" id="panel-area">
       <button class="back-btn" onclick="goBackToList()">&#8592; Back to list</button>
+
+      <!-- RECORD CONTROL PANEL -->
+      <div class="rec-panel">
+        <div class="rec-panel-hdr">RECORD CONTROL</div>
+        <div class="rec-panel-body">
+          <div class="rec-nav-grid">
+            <button class="rec-nav-btn" id="rec-first" onclick="navFirst()">&lt;&lt;&lt; First<br>Record</button>
+            <button class="rec-nav-btn" id="rec-last"  onclick="navLast()">Last &gt;&gt;&gt;<br>Record</button>
+            <button class="rec-nav-btn rec-nav-new"    onclick="clearPanels()">New<br>Record</button>
+            <button class="rec-nav-btn" id="rec-next"  onclick="navNext()">Next &gt;<br>Record</button>
+            <button class="rec-nav-btn" id="rec-prev"  onclick="navPrev()">&lt; Previous<br>Record</button>
+          </div>
+          <div class="rec-status">
+            <span class="rec-status-label">Record:</span>
+            <button class="rec-micro" id="rec-m-first" onclick="navFirst()">|&#9664;</button>
+            <button class="rec-micro" id="rec-m-prev"  onclick="navPrev()">&#9664;</button>
+            <div class="rec-status-counter" id="rec-counter">— of —</div>
+            <button class="rec-micro" id="rec-m-next"  onclick="navNext()">&#9654;</button>
+            <button class="rec-micro" id="rec-m-last"  onclick="navLast()">&#9654;|</button>
+          </div>
+        </div>
+      </div>
 
       <div id="no-selection" class="no-selection">
         <div class="no-sel-icon">&#9670;</div>
@@ -533,6 +557,7 @@ let allItems = [], filteredItems = [];
 let selectedItemId = null;
 let isDirty = false;
 let searchTimer = null;
+let autoSaveTimer = null;
 
 function setText(id, val) {
   const el = document.getElementById(id);
@@ -575,6 +600,13 @@ async function init() {
   handleUrlParams();
   document.getElementById('panel-grid').addEventListener('input', markDirty);
   document.getElementById('panel-grid').addEventListener('change', markDirty);
+  document.getElementById('panel-grid').addEventListener('blur', function() {
+    if (!selectedItemId || !isDirty) return;
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(function() {
+      if (selectedItemId && isDirty) saveItem();
+    }, 600);
+  }, true);
 }
 
 async function loadUser() {
@@ -699,11 +731,17 @@ function updateRecordNav() {
   var total = filteredItems.length;
   var idx = selectedItemId ? filteredItems.findIndex(function(i){ return i.id === selectedItemId; }) : -1;
   var pos = idx >= 0 ? idx + 1 : 0;
-  setText('rec-counter', total === 0 ? '— / 0' : (pos > 0 ? pos + ' / ' + total : '— / ' + total));
-  document.getElementById('rec-first').disabled = (idx <= 0);
-  document.getElementById('rec-prev').disabled  = (idx <= 0);
-  document.getElementById('rec-next').disabled  = (idx < 0 || idx >= total - 1);
-  document.getElementById('rec-last').disabled  = (idx < 0 || idx >= total - 1);
+  var atStart = idx <= 0;
+  var atEnd   = idx < 0 || idx >= total - 1;
+  setText('rec-counter', total === 0 ? '(no records)' : (pos > 0 ? pos + ' of ' + total : '— of ' + total));
+  document.getElementById('rec-first').disabled   = atStart;
+  document.getElementById('rec-prev').disabled    = atStart;
+  document.getElementById('rec-next').disabled    = atEnd;
+  document.getElementById('rec-last').disabled    = atEnd;
+  document.getElementById('rec-m-first').disabled = atStart;
+  document.getElementById('rec-m-prev').disabled  = atStart;
+  document.getElementById('rec-m-next').disabled  = atEnd;
+  document.getElementById('rec-m-last').disabled  = atEnd;
 }
 
 function navFirst() {
