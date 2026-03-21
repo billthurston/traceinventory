@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Team — Trace Inventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0d;--surface:#1a1a1a;--surface2:#222;--border:#2a2a2a;
+  --accent:#00c896;--accent-dim:rgba(0,200,150,.12);
+  --amber:#f59e0b;--red:#ef4444;--blue:#3b82f6;--purple:#8b5cf6;
+  --text:#e8e8e8;--muted:#888;
+  --font-disp:'Bebas Neue',sans-serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace;
+  --sidebar:240px;--radius:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);display:flex;min-height:100vh;overflow-x:hidden}
+
+/* sidebar */
+.sidebar{width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200;transition:transform .3s}
+.sidebar-logo{padding:24px 20px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo a{font-family:var(--font-disp);font-size:1.6rem;color:var(--accent);text-decoration:none;letter-spacing:1px}
+.sidebar-logo span{color:var(--muted);font-size:.7rem;display:block;font-family:var(--font-body);margin-top:2px}
+nav{flex:1;padding:16px 0;overflow-y:auto}
+.nav-section{font-size:.65rem;color:var(--muted);letter-spacing:.1em;padding:12px 20px 4px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;color:var(--muted);text-decoration:none;font-size:.875rem;font-weight:500;border-left:3px solid transparent;transition:all .2s}
+.nav-item svg{width:17px;height:17px;flex-shrink:0}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:var(--accent-dim)}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border)}
+.user-chip{display:flex;align-items:center;gap:10px}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent-dim);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:.8rem;color:var(--accent);font-weight:600;flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:.7rem;color:var(--muted);text-transform:capitalize}
+.topbar{display:none;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.hamburger{background:none;border:none;cursor:pointer;color:var(--text);display:flex;align-items:center;padding:4px}
+.topbar-logo{font-family:var(--font-disp);font-size:1.3rem;color:var(--accent);letter-spacing:1px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150}
+.overlay.show{display:block}
+
+/* main */
+.main{flex:1;margin-left:var(--sidebar);display:flex;flex-direction:column;min-height:100vh}
+.page-header{padding:28px 32px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.page-title{font-family:var(--font-disp);font-size:2rem;letter-spacing:1px}
+.page-sub{font-size:.8rem;color:var(--muted);margin-top:2px}
+.content{padding:24px 32px;display:flex;flex-direction:column;gap:24px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--radius);font-family:var(--font-body);font-size:.875rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;text-decoration:none;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#000}.btn-primary:hover{background:#00b386}
+.btn-ghost{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{background:rgba(255,255,255,.1)}
+.btn-danger{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.3)}.btn-danger:hover{background:rgba(239,68,68,.2)}
+.btn-sm{padding:6px 12px;font-size:.8rem}
+.btn svg{width:16px;height:16px}
+
+/* stats */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.stat-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.stat-val{font-family:var(--font-disp);font-size:1.8rem;letter-spacing:.5px}
+.stat-val.accent{color:var(--accent)}.stat-val.amber{color:var(--amber)}.stat-val.blue{color:var(--blue)}.stat-val.purple{color:var(--purple)}
+
+/* section card */
+.section-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.section-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.section-title{font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:8px}
+.section-title svg{width:16px;height:16px;color:var(--accent)}
+.badge-count{background:var(--accent-dim);color:var(--accent);font-size:.7rem;padding:2px 8px;border-radius:20px;font-weight:700}
+.badge-pending{background:rgba(245,158,11,.12);color:var(--amber);font-size:.7rem;padding:2px 8px;border-radius:20px;font-weight:700}
+
+/* member rows */
+.member-row{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .2s}
+.member-row:last-child{border-bottom:none}
+.member-row:hover{background:rgba(255,255,255,.02)}
+.member-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0;border:2px solid transparent}
+.member-avatar.owner{background:rgba(0,200,150,.15);border-color:var(--accent);color:var(--accent)}
+.member-avatar.manager{background:rgba(59,130,246,.15);border-color:var(--blue);color:var(--blue)}
+.member-avatar.staff{background:rgba(139,92,246,.15);border-color:var(--purple);color:var(--purple)}
+.member-info{flex:1;min-width:0}
+.member-name{font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.member-email{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.member-meta{font-size:.72rem;color:var(--muted);margin-top:1px}
+.role-badge{padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;flex-shrink:0}
+.role-badge.owner{background:rgba(0,200,150,.12);color:var(--accent)}
+.role-badge.manager{background:rgba(59,130,246,.12);color:var(--blue)}
+.role-badge.staff{background:rgba(139,92,246,.12);color:var(--purple)}
+.you-badge{background:rgba(255,255,255,.08);color:var(--muted);font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:600;margin-left:6px}
+.member-actions{display:flex;gap:6px;flex-shrink:0;opacity:0;transition:opacity .2s}
+.member-row:hover .member-actions{opacity:1}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:6px 10px;border-radius:6px;font-size:.78rem;font-weight:600;transition:all .2s}
+.icon-btn:hover{background:rgba(255,255,255,.08);color:var(--text)}
+.icon-btn.del:hover{background:rgba(239,68,68,.12);color:var(--red)}
+
+/* invite row */
+.invite-row{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.04)}
+.invite-row:last-child{border-bottom:none}
+.invite-avatar{width:40px;height:40px;border-radius:50%;background:rgba(245,158,11,.1);border:2px dashed var(--amber);display:flex;align-items:center;justify-content:center;color:var(--amber);font-size:.8rem;font-weight:700;flex-shrink:0}
+.invite-info{flex:1;min-width:0}
+.invite-email{font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.invite-meta{font-size:.72rem;color:var(--muted);margin-top:2px}
+.invite-actions{display:flex;gap:6px;flex-shrink:0}
+.copy-link-btn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--amber);padding:5px 11px;border-radius:6px;font-size:.76rem;font-weight:600;cursor:pointer;transition:all .2s}
+.copy-link-btn:hover{background:rgba(245,158,11,.2)}
+.cancel-invite-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:5px 11px;border-radius:6px;font-size:.76rem;font-weight:600;cursor:pointer;transition:all .2s}
+.cancel-invite-btn:hover{background:rgba(239,68,68,.08);border-color:var(--red);color:var(--red)}
+
+/* permissions panel */
+.perm-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.perm-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.perm-header svg{color:var(--accent);width:16px;height:16px}
+.perm-header-text{font-weight:700;font-size:.95rem}
+.perm-body{padding:20px}
+.perm-desc{font-size:.82rem;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.perm-role-section{margin-bottom:20px}
+.perm-role-section:last-child{margin-bottom:0}
+.perm-role-label{font-size:.8rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.perm-role-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.perm-role-dot.manager{background:var(--blue)}
+.perm-role-dot.staff{background:var(--purple)}
+.perm-toggles{display:flex;flex-direction:column;gap:10px;padding-left:16px}
+.perm-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.perm-toggle-label{font-size:.85rem;color:var(--text)}
+.perm-toggle-desc{font-size:.75rem;color:var(--muted)}
+.toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:24px;cursor:pointer;transition:background .2s}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle-switch input:checked + .toggle-slider{background:var(--accent)}
+.toggle-switch input:checked + .toggle-slider::before{transform:translateX(20px)}
+.perm-divider{height:1px;background:var(--border);margin:16px 0}
+.save-perms-wrap{display:flex;justify-content:flex-end;margin-top:16px}
+
+/* role guide */
+.role-guide{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.role-guide-header{padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:8px}
+.role-guide-header svg{color:var(--accent);width:16px;height:16px}
+.role-guide-body{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.role-col{padding:16px 20px;border-right:1px solid var(--border)}
+.role-col:last-child{border-right:none}
+.role-col-title{font-weight:700;font-size:.85rem;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.role-col-title .dot{width:8px;height:8px;border-radius:50%}
+.dot-owner{background:var(--accent)}.dot-manager{background:var(--blue)}.dot-staff{background:var(--purple)}
+.perm-list{display:flex;flex-direction:column;gap:5px}
+.perm-item{font-size:.78rem;color:var(--muted);display:flex;align-items:flex-start;gap:6px}
+.perm-item.yes{color:var(--text)}
+.perm-check{font-size:.8rem;flex-shrink:0;margin-top:1px}
+.perm-check.yes{color:var(--accent)}
+.perm-check.no{color:var(--border)}
+
+/* drawer */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;opacity:0;pointer-events:none;transition:opacity .3s}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;top:0;right:0;width:420px;max-width:100vw;height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:301;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s}
+.drawer.open{transform:translateX(0)}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)}
+.drawer-title{font-family:var(--font-disp);font-size:1.4rem;letter-spacing:.5px}
+.drawer-close{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;display:flex;align-items:center;transition:color .2s}
+.drawer-close:hover{color:var(--text)}
+.drawer-body{flex:1;overflow-y:auto;padding:24px}
+.form-group{margin-bottom:18px}
+.form-label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.form-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--font-body);font-size:.9rem;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--muted)}
+.form-select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--font-body);font-size:.9rem;outline:none;cursor:pointer;appearance:none}
+.form-select:focus{border-color:var(--accent)}
+.form-err{font-size:.78rem;color:var(--red);margin-top:4px;display:none}
+.role-cards{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.role-card-option{border:2px solid var(--border);border-radius:8px;padding:12px 14px;cursor:pointer;transition:all .2s}
+.role-card-option:hover{border-color:var(--muted)}
+.role-card-option.selected-manager{border-color:var(--blue);background:rgba(59,130,246,.08)}
+.role-card-option.selected-staff{border-color:var(--purple);background:rgba(139,92,246,.08)}
+.role-card-name{font-weight:700;font-size:.875rem;margin-bottom:2px}
+.role-card-desc{font-size:.76rem;color:var(--muted)}
+.invite-link-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:16px;display:none}
+.invite-link-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.invite-link-url{font-family:var(--font-mono);font-size:.75rem;color:var(--accent);word-break:break-all;margin-bottom:8px}
+.drawer-footer{padding:20px 24px;border-top:1px solid var(--border);display:flex;gap:10px}
+.drawer-footer .btn{flex:1;justify-content:center}
+
+/* role change modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:380px;width:100%}
+.modal-title{font-family:var(--font-disp);font-size:1.3rem;margin-bottom:8px}
+.modal-body{font-size:.875rem;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.modal-name{color:var(--text);font-weight:600}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.modal-select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--font-body);font-size:.9rem;outline:none;cursor:pointer;margin-bottom:20px;appearance:none}
+.modal-select:focus{border-color:var(--accent)}
+
+/* toast */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;font-size:.875rem;min-width:240px;max-width:340px;animation:slideUp .3s ease}
+.toast.success{border-left:3px solid var(--accent)}
+.toast.error{border-left:3px solid var(--red);color:var(--red)}
+.toast.info{border-left:3px solid var(--blue)}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+@media(max-width:900px){.stats-bar{grid-template-columns:repeat(2,1fr)}.role-guide-body{grid-template-columns:1fr}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+  .topbar{display:flex}.main{margin-left:0}
+  .content{padding:16px}.drawer{width:100vw}
+  .role-guide-body{grid-template-columns:1fr}
+  .role-col{border-right:none;border-bottom:1px solid var(--border)}
+}
+.empty-members{padding:40px 20px;text-align:center;color:var(--muted);font-size:.875rem}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="dashboard.html">TRACE<span style="color:var(--accent)">.</span></a>
+    <span>Inventory Platform</span>
+  </div>
+  <nav>
+    <div class="nav-section">Main</div>
+    <a href="dashboard.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a href="items.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg>
+      Inventory
+    </a>
+    <a href="scan.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+      Scan
+    </a>
+    <a href="movements.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M17 3l4 4-4 4M7 21l-4-4 4-4M21 7H9M3 17h12"/></svg>
+      Movements
+    </a>
+    <div class="nav-section">Channels</div>
+    <a href="ebay.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+      eBay
+    </a>
+    <a href="amazon.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+      Amazon
+    </a>
+    <div class="nav-section">Operations</div>
+    <a href="locations.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      Locations
+    </a>
+    <a href="team.html" class="nav-item active">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><circle cx="19" cy="7" r="3"/><path d="M23 21v-2a3 3 0 00-3-3"/></svg>
+      Team
+    </a>
+    <div class="nav-section">Account</div>
+    <a href="settings.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Settings
+    </a>
+    <a href="help.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17" stroke-linecap="round" stroke-width="2.5"/></svg>
+      Help / Tracie
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar" id="user-avatar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="user-name">Loading…</div>
+        <div class="user-role" id="user-role">—</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div class="topbar">
+  <button class="hamburger" onclick="openSidebar()">
+    <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <span class="topbar-logo">TRACE<span style="color:var(--accent)">.</span></span>
+</div>
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Team</div>
+      <div class="page-sub">Manage who has access to your account</div>
+    </div>
+    <button class="btn btn-primary" id="btn-invite" onclick="openDrawer()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Invite Member
+    </button>
+  </div>
+
+  <div class="content">
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-label">Total Members</div><div class="stat-val accent" id="stat-total">—</div></div>
+      <div class="stat-card"><div class="stat-label">Managers</div><div class="stat-val blue" id="stat-managers">—</div></div>
+      <div class="stat-card"><div class="stat-label">Staff</div><div class="stat-val purple" id="stat-staff">—</div></div>
+      <div class="stat-card"><div class="stat-label">Pending Invites</div><div class="stat-val amber" id="stat-pending">—</div></div>
+    </div>
+
+    <!-- Active members -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><circle cx="19" cy="7" r="3"/><path d="M23 21v-2a3 3 0 00-3-3"/></svg>
+          Active Members
+          <span class="badge-count" id="member-count">0</span>
+        </div>
+      </div>
+      <div id="members-list"></div>
+    </div>
+
+    <!-- Pending invites -->
+    <div class="section-card" id="invites-section" style="display:none">
+      <div class="section-header">
+        <div class="section-title">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Pending Invitations
+          <span class="badge-pending" id="invite-count">0</span>
+        </div>
+      </div>
+      <div id="invites-list"></div>
+    </div>
+
+    <!-- Customization permissions -->
+    <div class="perm-panel" id="perm-panel">
+      <div class="perm-header">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        <span class="perm-header-text">Customization Permissions</span>
+      </div>
+      <div class="perm-body">
+        <p class="perm-desc">Control whether Managers and Staff can personalize their own dashboard layout and theme color. Owners can always customize.</p>
+
+        <!-- Manager permissions -->
+        <div class="perm-role-section">
+          <div class="perm-role-label">
+            <span class="perm-role-dot manager"></span>
+            Manager
+          </div>
+          <div class="perm-toggles">
+            <div class="perm-toggle-row">
+              <div>
+                <div class="perm-toggle-label">Customize dashboard layout</div>
+                <div class="perm-toggle-desc">Drag and rearrange dashboard widgets</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="perm-mgr-layout"/>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="perm-toggle-row">
+              <div>
+                <div class="perm-toggle-label">Choose their own theme color</div>
+                <div class="perm-toggle-desc">Personal accent color — doesn't affect other users</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="perm-mgr-theme"/>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="perm-divider"></div>
+
+        <!-- Staff permissions -->
+        <div class="perm-role-section">
+          <div class="perm-role-label">
+            <span class="perm-role-dot staff"></span>
+            Staff
+          </div>
+          <div class="perm-toggles">
+            <div class="perm-toggle-row">
+              <div>
+                <div class="perm-toggle-label">Customize dashboard layout</div>
+                <div class="perm-toggle-desc">Drag and rearrange dashboard widgets</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="perm-staff-layout"/>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="perm-toggle-row">
+              <div>
+                <div class="perm-toggle-label">Choose their own theme color</div>
+                <div class="perm-toggle-desc">Personal accent color — doesn't affect other users</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="perm-staff-theme"/>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="save-perms-wrap">
+          <button class="btn btn-primary btn-sm" onclick="savePermissions()">Save Permissions</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Role reference guide -->
+    <div class="role-guide">
+      <div class="role-guide-header">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Role Reference
+      </div>
+      <div class="role-guide-body">
+        <div class="role-col">
+          <div class="role-col-title"><span class="dot dot-owner"></span> Owner</div>
+          <div class="perm-list" id="guide-owner"></div>
+        </div>
+        <div class="role-col">
+          <div class="role-col-title"><span class="dot dot-manager"></span> Manager</div>
+          <div class="perm-list" id="guide-manager"></div>
+        </div>
+        <div class="role-col">
+          <div class="role-col-title"><span class="dot dot-staff"></span> Staff</div>
+          <div class="perm-list" id="guide-staff"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Invite drawer -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">Invite Member</div>
+    <button class="drawer-close" onclick="closeDrawer()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-group">
+      <label class="form-label" for="inv-email">Email Address</label>
+      <input type="email" class="form-input" id="inv-email" placeholder="teammate@example.com" autocomplete="off"/>
+      <div class="form-err" id="err-email">Please enter a valid email address</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Role</div>
+      <div class="role-cards">
+        <div class="role-card-option" id="card-manager" onclick="selectRole('manager')">
+          <div class="role-card-name" style="color:var(--blue)">Manager</div>
+          <div class="role-card-desc">Manages inventory, movements, locations, and team (except owner). Cannot change billing.</div>
+        </div>
+        <div class="role-card-option" id="card-staff" onclick="selectRole('staff')">
+          <div class="role-card-name" style="color:var(--purple)">Staff</div>
+          <div class="role-card-desc">Can scan items, view inventory, and log movements. No admin access.</div>
+        </div>
+      </div>
+      <div class="form-err" id="err-role">Please select a role</div>
+    </div>
+
+    <!-- Generated invite link (shown after creating invite) -->
+    <div class="invite-link-box" id="invite-link-box">
+      <div class="invite-link-label">Invite Link — share this with your teammate</div>
+      <div class="invite-link-url" id="invite-link-url"></div>
+      <button class="btn btn-ghost btn-sm" onclick="copyInviteLink()">Copy Link</button>
+    </div>
+
+    <p style="font-size:.78rem;color:var(--muted);margin-top:16px;line-height:1.5">
+      Your teammate will use this link to create their account and join your workspace. Automated email delivery coming soon.
+    </p>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-ghost" onclick="closeDrawer()">Close</button>
+    <button class="btn btn-primary" onclick="sendInvite()" id="btn-send">Generate Invite Link</button>
+  </div>
+</div>
+
+<!-- Role change modal -->
+<div class="modal-overlay" id="role-modal">
+  <div class="modal">
+    <div class="modal-title">Change Role</div>
+    <div class="modal-body">Change role for <span class="modal-name" id="modal-member-name">—</span>:</div>
+    <select class="modal-select" id="modal-role-select">
+      <option value="manager">Manager</option>
+      <option value="staff">Staff</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeRoleModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmRoleChange()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Remove confirm modal -->
+<div class="modal-overlay" id="remove-modal">
+  <div class="modal">
+    <div class="modal-title">Remove Member?</div>
+    <div class="modal-body">Remove <span class="modal-name" id="remove-member-name">—</span> from your team? They will lose access immediately.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeRemoveModal()">Cancel</button>
+      <button class="btn btn-danger btn-sm" onclick="confirmRemove()">Remove</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="config.js"></script>
+<script>
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null, currentOrg = null, currentRole = null;
+let members = [], invites = [];
+let selectedInviteRole = null;
+let roleChangeId = null, removeId = null;
+let generatedLink = '';
+
+const ROLE_PERMS = {
+  owner:   ['Full account access','Manage billing & subscription','Invite & remove members','All inventory operations','Customize layout & theme'],
+  manager: ['Manage inventory & items','Log movements & scan','Manage locations & team*','View reports & export','Customize (if owner allows)'],
+  staff:   ['Scan & look up items','Log stock movements','View inventory','No admin access','Customize (if owner allows)']
+};
+
+function setText(id,v){ const el=document.getElementById(id); if(el) el.textContent=v??'—'; }
+function clearEl(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+function toast(msg,type='success'){
+  const c=document.getElementById('toast-container');
+  const t=document.createElement('div'); t.className='toast '+type; t.textContent=msg; c.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); },3500);
+}
+function fmtDate(str){ if(!str) return '—'; return new Date(str).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function initials(name){ return name ? name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2) : '?'; }
+
+function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+
+async function init(){
+  const { data:{user} } = await sb.auth.getUser();
+  if(!user){ window.location.href='login.html'; return; }
+  currentUser = user;
+
+  // Ensure owner has a membership record
+  const { data:m, error:mErr } = await sb.from('memberships').select('role,org_id').eq('user_id',user.id).single();
+  if(m && !mErr){
+    currentOrg  = m.org_id;
+    currentRole = m.role;
+  } else {
+    // First time — create owner membership using user.id as org_id
+    currentOrg  = user.id;
+    currentRole = 'owner';
+    await sb.from('memberships').upsert({
+      org_id: user.id, user_id: user.id,
+      email: user.email, role: 'owner'
+    }, { onConflict: 'org_id,user_id' });
+  }
+
+  const name = user.user_metadata?.full_name || (user.email||'').split('@')[0] || 'User';
+  setText('user-name', name);
+  setText('user-role', currentRole);
+  const av=document.getElementById('user-avatar'); if(av) av.textContent=name.charAt(0).toUpperCase();
+
+  // Hide invite button & permissions for non-owners
+  if(currentRole !== 'owner'){
+    const ib=document.getElementById('btn-invite'); if(ib) ib.style.display='none';
+    const pp=document.getElementById('perm-panel'); if(pp) pp.style.display='none';
+  }
+
+  buildRoleGuide();
+  await Promise.all([loadMembers(), loadInvites(), loadPermissions()]);
+}
+
+// role guide
+function buildRoleGuide(){
+  ['owner','manager','staff'].forEach(role=>{
+    const container=document.getElementById('guide-'+role);
+    if(!container) return;
+    clearEl(container);
+    ROLE_PERMS[role].forEach(perm=>{
+      const div=document.createElement('div'); div.className='perm-item yes';
+      const check=document.createElement('span'); check.className='perm-check yes'; check.textContent='✓';
+      const txt=document.createElement('span'); txt.textContent=perm;
+      div.appendChild(check); div.appendChild(txt); container.appendChild(div);
+    });
+  });
+}
+
+// load members
+async function loadMembers(){
+  const { data, error } = await sb.from('memberships').select('*').eq('org_id',currentOrg);
+  if(error){ toast('Error loading team: '+error.message,'error'); return; }
+  members = data||[];
+
+  const list=document.getElementById('members-list');
+  clearEl(list);
+  setText('member-count', members.length);
+  setText('stat-total', members.length);
+  setText('stat-managers', members.filter(m=>m.role==='manager').length);
+  setText('stat-staff', members.filter(m=>m.role==='staff').length);
+
+  if(!members.length){
+    const empty=document.createElement('div'); empty.className='empty-members';
+    empty.textContent='No team members yet. Invite someone to get started.';
+    list.appendChild(empty); return;
+  }
+
+  // Sort: owner first, then managers, then staff
+  const order={owner:0,manager:1,staff:2};
+  const sorted=[...members].sort((a,b)=>(order[a.role]||9)-(order[b.role]||9));
+
+  sorted.forEach(member=>{
+    const isMe = member.user_id === currentUser.id;
+    const name = member.email ? member.email.split('@')[0] : 'User';
+    const row = buildMemberRow(member, name, isMe);
+    list.appendChild(row);
+  });
+}
+
+function buildMemberRow(member, name, isMe){
+  const row=document.createElement('div'); row.className='member-row';
+
+  const av=document.createElement('div'); av.className='member-avatar '+member.role;
+  av.textContent=initials(name);
+
+  const info=document.createElement('div'); info.className='member-info';
+  const nameWrap=document.createElement('div'); nameWrap.style.display='flex'; nameWrap.style.alignItems='center'; nameWrap.style.gap='4px';
+  const nameEl=document.createElement('div'); nameEl.className='member-name'; nameEl.textContent=name;
+  nameWrap.appendChild(nameEl);
+  if(isMe){ const you=document.createElement('span'); you.className='you-badge'; you.textContent='You'; nameWrap.appendChild(you); }
+  const emailEl=document.createElement('div'); emailEl.className='member-email'; emailEl.textContent=member.email||'—';
+  const metaEl=document.createElement('div'); metaEl.className='member-meta'; metaEl.textContent='Joined '+fmtDate(member.created_at);
+  info.appendChild(nameWrap); info.appendChild(emailEl); info.appendChild(metaEl);
+
+  const badge=document.createElement('span'); badge.className='role-badge '+member.role; badge.textContent=member.role;
+
+  const actions=document.createElement('div'); actions.className='member-actions';
+
+  if(!isMe && currentRole==='owner' && member.role!=='owner'){
+    const chBtn=document.createElement('button'); chBtn.className='icon-btn'; chBtn.textContent='Change Role';
+    chBtn.onclick=()=>openRoleModal(member, name);
+    const rmBtn=document.createElement('button'); rmBtn.className='icon-btn del'; rmBtn.textContent='Remove';
+    rmBtn.onclick=()=>openRemoveModal(member, name);
+    actions.appendChild(chBtn); actions.appendChild(rmBtn);
+  }
+
+  row.appendChild(av); row.appendChild(info); row.appendChild(badge); row.appendChild(actions);
+  return row;
+}
+
+// load invites
+async function loadInvites(){
+  const { data, error } = await sb.from('invitations').select('*').eq('org_id',currentOrg).eq('accepted',false).order('created_at',{ascending:false});
+  if(error) return;
+  invites = data||[];
+
+  setText('stat-pending', invites.length);
+  setText('invite-count', invites.length);
+
+  const section=document.getElementById('invites-section');
+  if(!invites.length){ section.style.display='none'; return; }
+  section.style.display='';
+
+  const list=document.getElementById('invites-list');
+  clearEl(list);
+  invites.forEach(inv=>{
+    const row=buildInviteRow(inv);
+    list.appendChild(row);
+  });
+}
+
+function buildInviteRow(inv){
+  const link = window.location.origin + '/login.html?invite=' + inv.token + '&org=' + currentOrg + '&role=' + inv.role;
+
+  const row=document.createElement('div'); row.className='invite-row';
+  const av=document.createElement('div'); av.className='invite-avatar'; av.textContent='?';
+  const info=document.createElement('div'); info.className='invite-info';
+  const emailEl=document.createElement('div'); emailEl.className='invite-email'; emailEl.textContent=inv.email;
+  const metaEl=document.createElement('div'); metaEl.className='invite-meta';
+  metaEl.textContent=inv.role.charAt(0).toUpperCase()+inv.role.slice(1)+' · Invited '+fmtDate(inv.created_at);
+  info.appendChild(emailEl); info.appendChild(metaEl);
+
+  const actWrap=document.createElement('div'); actWrap.className='invite-actions';
+
+  const copyBtn=document.createElement('button'); copyBtn.className='copy-link-btn'; copyBtn.textContent='Copy Link';
+  copyBtn.onclick=()=>{ navigator.clipboard.writeText(link).then(()=>toast('Invite link copied!')).catch(()=>toast('Copy failed','error')); };
+
+  const cancelBtn=document.createElement('button'); cancelBtn.className='cancel-invite-btn'; cancelBtn.textContent='Cancel';
+  cancelBtn.onclick=()=>cancelInvite(inv.id);
+
+  actWrap.appendChild(copyBtn); actWrap.appendChild(cancelBtn);
+  row.appendChild(av); row.appendChild(info); row.appendChild(actWrap);
+  return row;
+}
+
+async function cancelInvite(id){
+  const { error } = await sb.from('invitations').delete().eq('id',id);
+  if(error){ toast('Error cancelling invite','error'); return; }
+  toast('Invite cancelled');
+  await loadInvites();
+}
+
+// permissions
+async function loadPermissions(){
+  const { data, error } = await sb.from('org_settings').select('*').eq('org_id',currentOrg).single();
+  if(data&&!error){
+    document.getElementById('perm-mgr-layout').checked   = !!data.allow_manager_layout;
+    document.getElementById('perm-mgr-theme').checked    = !!data.allow_manager_theme;
+    document.getElementById('perm-staff-layout').checked = !!data.allow_staff_layout;
+    document.getElementById('perm-staff-theme').checked  = !!data.allow_staff_theme;
+  } else {
+    // defaults
+    document.getElementById('perm-mgr-layout').checked   = true;
+    document.getElementById('perm-mgr-theme').checked    = true;
+    document.getElementById('perm-staff-layout').checked = false;
+    document.getElementById('perm-staff-theme').checked  = false;
+  }
+}
+
+async function savePermissions(){
+  const payload={
+    org_id: currentOrg,
+    allow_manager_layout:  document.getElementById('perm-mgr-layout').checked,
+    allow_manager_theme:   document.getElementById('perm-mgr-theme').checked,
+    allow_staff_layout:    document.getElementById('perm-staff-layout').checked,
+    allow_staff_theme:     document.getElementById('perm-staff-theme').checked
+  };
+  const { error } = await sb.from('org_settings').upsert(payload,{onConflict:'org_id'});
+  if(error){ toast('Error saving permissions: '+error.message,'error'); return; }
+  toast('Permissions saved!');
+}
+
+// invite drawer
+function openDrawer(){
+  document.getElementById('inv-email').value='';
+  selectedInviteRole=null;
+  generatedLink='';
+  document.getElementById('card-manager').className='role-card-option';
+  document.getElementById('card-staff').className='role-card-option';
+  document.getElementById('err-email').style.display='none';
+  document.getElementById('err-role').style.display='none';
+  document.getElementById('invite-link-box').style.display='none';
+  document.getElementById('btn-send').textContent='Generate Invite Link';
+  document.getElementById('btn-send').disabled=false;
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('inv-email').focus();
+}
+
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+
+function selectRole(role){
+  selectedInviteRole=role;
+  document.getElementById('card-manager').className='role-card-option'+(role==='manager'?' selected-manager':'');
+  document.getElementById('card-staff').className='role-card-option'+(role==='staff'?' selected-staff':'');
+  document.getElementById('err-role').style.display='none';
+}
+
+async function sendInvite(){
+  const email=document.getElementById('inv-email').value.trim();
+  const emailOk=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if(!emailOk){ document.getElementById('err-email').style.display='block'; return; }
+  if(!selectedInviteRole){ document.getElementById('err-role').style.display='block'; return; }
+  document.getElementById('err-email').style.display='none';
+  document.getElementById('err-role').style.display='none';
+
+  const btn=document.getElementById('btn-send');
+  btn.textContent='Creating…'; btn.disabled=true;
+
+  const { data, error } = await sb.from('invitations').insert({
+    org_id: currentOrg, email, role: selectedInviteRole, invited_by: currentUser.id
+  }).select().single();
+
+  btn.textContent='Generate Invite Link'; btn.disabled=false;
+  if(error){ toast('Error creating invite: '+error.message,'error'); return; }
+
+  // Show invite link
+  const link = window.location.origin+'/login.html?invite='+data.token+'&org='+currentOrg+'&role='+selectedInviteRole;
+  generatedLink=link;
+  const box=document.getElementById('invite-link-box');
+  const urlEl=document.getElementById('invite-link-url');
+  urlEl.textContent=link;
+  box.style.display='block';
+  btn.textContent='Link Generated ✓';
+  toast('Invite created! Share the link with '+email);
+  await loadInvites();
+}
+
+function copyInviteLink(){
+  const url=document.getElementById('invite-link-url').textContent;
+  navigator.clipboard.writeText(url).then(()=>toast('Copied to clipboard!')).catch(()=>toast('Copy failed','error'));
+}
+
+// role change modal
+function openRoleModal(member, name){
+  roleChangeId=member.id;
+  setText('modal-member-name', name);
+  document.getElementById('modal-role-select').value=member.role;
+  document.getElementById('role-modal').classList.add('open');
+}
+function closeRoleModal(){ document.getElementById('role-modal').classList.remove('open'); roleChangeId=null; }
+async function confirmRoleChange(){
+  if(!roleChangeId) return;
+  const newRole=document.getElementById('modal-role-select').value;
+  const { error } = await sb.from('memberships').update({role:newRole}).eq('id',roleChangeId);
+  closeRoleModal();
+  if(error){ toast('Error updating role: '+error.message,'error'); return; }
+  toast('Role updated!');
+  await loadMembers();
+}
+
+// remove modal
+function openRemoveModal(member, name){
+  removeId=member.id;
+  setText('remove-member-name', name);
+  document.getElementById('remove-modal').classList.add('open');
+}
+function closeRemoveModal(){ document.getElementById('remove-modal').classList.remove('open'); removeId=null; }
+async function confirmRemove(){
+  if(!removeId) return;
+  const { error } = await sb.from('memberships').delete().eq('id',removeId);
+  closeRemoveModal();
+  if(error){ toast('Error removing member: '+error.message,'error'); return; }
+  toast('Member removed');
+  await loadMembers();
+}
+
+init();
+</script>
+</body>
+</html>

@@ -758,16 +758,23 @@
     }
 
     async function loadUser() {
-      const { data: m } = await sb.from('memberships')
-        .select('role, org_id, organizations(name)')
+      const name = currentUser.user_metadata?.full_name || currentUser.email;
+      const ini  = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+      setText('user-initials', ini);
+      setText('user-name', name);
+
+      // Try memberships table first; fall back to user ID as org if unavailable
+      const { data: m, error } = await sb.from('memberships')
+        .select('role, org_id')
         .eq('user_id', currentUser.id).single();
-      if (m) {
+
+      if (m && !error) {
         currentOrg = m.org_id;
-        const name = currentUser.user_metadata?.full_name || currentUser.email;
-        const ini  = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
-        setText('user-initials', ini);
-        setText('user-name', name);
         setText('user-role', m.role);
+      } else {
+        // Fallback: use user's own ID as org (single-user / no memberships table yet)
+        currentOrg = currentUser.id;
+        setText('user-role', 'owner');
       }
     }
 
